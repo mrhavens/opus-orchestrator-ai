@@ -612,15 +612,15 @@ Write ~{plan.word_count_target} words.
         except Exception as e:
             print(f"Stream error: {e}")
         
-        # FIX: Fallback - pull directly from checkpointer
-        if not final_state.manuscript:
-            print("Pulling from checkpointer...")
-            try:
-                snapshot = self.graph.get_state(config)
-                if snapshot and snapshot.values:
-                    final_state = snapshot.values
-            except Exception as e:
-                print(f"Checkpointer error: {e}")
+        # FIX: Handle both OpusGraphState and dict from checkpointer
+        if hasattr(final_state, 'manuscript') and final_state.manuscript:
+            pass  # Already have state
+        elif isinstance(final_state, dict) and final_state.get('manuscript'):
+            # Convert dict back to state if needed
+            print(f"\n[RESULT] Chapters: {len(final_state.get('chapters', {}))}, Words: {final_state.get('total_word_count', 0)}")
+            return OpusGraphState(**final_state)
+        else:
+            print(f"\n[RESULT] No manuscript found in state")
         
         print(f"\n[RESULT] Chapters: {len(final_state.chapters)}, Words: {final_state.total_word_count}")
         
