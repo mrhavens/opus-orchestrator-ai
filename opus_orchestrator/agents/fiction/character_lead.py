@@ -46,7 +46,7 @@ You are The Character Lead — the one who breathes life into the figures who in
 - **Positive**: Growth from weakness
 - **Negative**: Fall from grace
 - **Flat**: No change, changes world
-- **Disruption**: External力量打破平衡
+- **Disruption**: External forces break equilibrium
 
 ## The Want/Need/Fear Triad
 
@@ -77,39 +77,52 @@ class CharacterLeadAgent(BaseAgent):
         )
 
     async def execute(self, input_data: Any, context: dict[str, Any]) -> AgentResponse:
-        """Execute the Character Lead's task to generate character profiles.
-
-        Args:
-            input_data: Raw content + blueprint with character references
-            context: Additional context
-
-        Returns:
-            AgentResponse with character profiles
-        """
+        """Execute the Character Lead's task to generate character profiles."""
         characters = input_data.get("characters", [])
         raw_content = input_data.get("raw_content", "")
+        blueprint = input_data.get("blueprint", {})
 
         user_prompt = f"""## Task
 
-Create comprehensive character profiles for the following characters:
+Create comprehensive character profiles for the following story:
 
-{chr(10).join(f"- {c}" for c in characters) if characters else "Create profiles for all characters in the story."}
+- Title: {blueprint.get('title', 'Untitled')}
+- Genre: {blueprint.get('genre', 'general')}
+
+{chr(10).join(f'- {c}' for c in characters) if characters else 'Create compelling characters that would drive this story.'}
 
 ## Raw Content Reference
 
-{raw_content}
+{raw_content if raw_content else 'Create original characters appropriate for this genre and story.'}
 
 ## Guidelines
 
 Follow the Character Lead methodology from your system prompt.
 Include the Want/Need/Fear triad for each major character.
+Ensure each character has a distinct voice and arc.
 """
 
-        return AgentResponse(
-            success=True,
-            output={"status": "characters_created"},
-            metadata={"role": "Character Lead", "character_count": len(characters)},
-        )
+        try:
+            result = await self.call_llm(
+                system_prompt=self.build_system_prompt(context),
+                user_prompt=user_prompt,
+            )
+
+            return AgentResponse(
+                success=True,
+                output=result,
+                metadata={
+                    "role": "Character Lead",
+                    "character_count": len(characters) if characters else 0,
+                },
+            )
+        except Exception as e:
+            return AgentResponse(
+                success=False,
+                output=None,
+                error=str(e),
+                metadata={"role": "Character Lead"},
+            )
 
     async def develop_relationship(
         self,
@@ -129,14 +142,27 @@ Include the Want/Need/Fear triad for each major character.
 
 Develop this relationship following the Character Lead methodology.
 Include:
-- Current dynamics
-- Power balance
+- Current dynamics and power balance
 - History (if any)
-- Potential arc
+- Potential arc throughout the story
+- Key moments that define the relationship
 """
 
-        return AgentResponse(
-            success=True,
-            output={"status": "relationship_developed"},
-            metadata={"role": "Character Lead", "characters": [character_a, character_b]},
-        )
+        try:
+            result = await self.call_llm(
+                system_prompt=self.build_system_prompt(context),
+                user_prompt=user_prompt,
+            )
+
+            return AgentResponse(
+                success=True,
+                output=result,
+                metadata={"role": "Character Lead", "characters": [character_a, character_b]},
+            )
+        except Exception as e:
+            return AgentResponse(
+                success=False,
+                output=None,
+                error=str(e),
+                metadata={"role": "Character Lead"},
+            )

@@ -64,12 +64,14 @@ You are The Editor — the quality control mechanism, identifying problems acros
 - **Minor Revisions**: Continuity errors, style inconsistencies, pacing tweaks
 - **Polish**: Grammar, punctuation, word choice refinement
 
-## Quality Standards
+## Output Format
 
-- Every issue must have specific, actionable feedback
-- Revision priorities must be clearly ordered
-- Continuity issues must be flagged with exact locations
-- Pacing analysis must be data-driven (scene lengths, tension scores)
+Provide your critique as a structured review with:
+1. Overall score (0.0-1.0)
+2. Strengths (list)
+3. Weaknesses (list)
+4. Specific revision suggestions (prioritized)
+5. Final verdict: major_revisions / minor_revisions / approved
 """
 
 
@@ -85,41 +87,43 @@ class EditorAgent(BaseAgent):
         )
 
     async def execute(self, input_data: Any, context: dict[str, Any]) -> AgentResponse:
-        """Execute the Editor's task to review and assess the manuscript.
-
-        Args:
-            input_data: Chapter or manuscript to review
-            context: Review criteria and standards
-
-        Returns:
-            AgentResponse with editorial assessment
-        """
+        """Execute the Editor's task to review content."""
         content = input_data.get("content", "")
         review_type = input_data.get("review_type", "full")
 
         user_prompt = f"""## Task
 
-Perform a {review_type} editorial review on:
+Perform a {review_type} editorial review on the following content:
 
-{content[:5000]}... {'(truncated)' if len(content) > 5000 else ''}
+{content}
 
 ## Review Type: {review_type}
 
 ## Guidelines
 
 Follow the Editor methodology from your system prompt.
-Include:
-- Continuity verification
-- Pacing analysis
-- Quality assessment
-- Specific revision directions
+Be specific and actionable in your feedback.
+Assign a clear revision priority.
 """
 
-        return AgentResponse(
-            success=True,
-            output={"status": "editorial_review_complete"},
-            metadata={"role": "Editor", "review_type": review_type},
-        )
+        try:
+            result = await self.call_llm(
+                system_prompt=self.build_system_prompt(context),
+                user_prompt=user_prompt,
+            )
+
+            return AgentResponse(
+                success=True,
+                output=result,
+                metadata={"role": "Editor", "review_type": review_type},
+            )
+        except Exception as e:
+            return AgentResponse(
+                success=False,
+                output=None,
+                error=str(e),
+                metadata={"role": "Editor"},
+            )
 
     async def review_chapter(
         self,
@@ -132,14 +136,15 @@ Include:
 
 - Chapter Number: {chapter.get('chapter_number')}
 - Title: {chapter.get('title')}
-- Content: {chapter.get('content', '')[:3000]}...
+- Content:
+
+{chapter.get('content', '')}
 
 ## Full Manuscript Context
 
 - Total Chapters: {full_manuscript_context.get('total_chapters', 0)}
-- Previous Chapters Summary: {full_manuscript_context.get('previous_summaries', [])}
-- Characters in Story: {', '.join(full_manuscript_context.get('characters', []))}
-- World Rules: {full_manuscript_context.get('world_rules', {})}
+- Book Title: {full_manuscript_context.get('title', 'Untitled')}
+- Genre: {full_manuscript_context.get('genre', 'general')}
 
 ## Task
 
@@ -150,18 +155,52 @@ Perform a complete editorial review of this chapter, considering:
 - World-rule adherence
 - Voice consistency
 - Dialogue quality
+- Show vs. tell balance
 
-Assign a revision priority: major_revisions, minor_revisions, or approved
+Provide:
+1. Overall score (0.0-1.0)
+2. Strengths (at least 3)
+3. Weaknesses (at least 3)
+4. Specific revision suggestions
+5. Final verdict: major_revisions, minor_revisions, or approved
 """
 
-        return AgentResponse(
-            success=True,
-            output={
-                "status": "chapter_reviewed",
-                "chapter_number": chapter.get("chapter_number"),
-            },
-            metadata={"role": "Editor", "task": "chapter_review"},
-        )
+        try:
+            result = await self.call_llm(
+                system_prompt=self.build_system_prompt(context),
+                user_prompt=user_prompt,
+            )
+
+            # Try to extract score from result
+            score = 0.5  # default
+            for line in result.split('\n'):
+                if 'score' in line.lower() or 'rating' in line.lower():
+                    try:
+                        # Look for number
+                        import re
+                        numbers = re.findall(r'0\.\d+|\d+\.\d+', line)
+                        if numbers:
+                            score = float(numbers[0])
+                            break
+                    except:
+                        pass
+
+            return AgentResponse(
+                success=True,
+                output={
+                    "critique": result,
+                    "score": score,
+                    "chapter_number": chapter.get("chapter_number"),
+                },
+                metadata={"role": "Editor", "task": "chapter_review"},
+            )
+        except Exception as e:
+            return AgentResponse(
+                success=False,
+                output=None,
+                error=str(e),
+                metadata={"role": "Editor"},
+            )
 
     async def generate_revision_notes(
         self,
@@ -169,23 +208,38 @@ Assign a revision priority: major_revisions, minor_revisions, or approved
         context: dict[str, Any],
     ) -> AgentResponse:
         """Generate prioritized revision notes from multiple critiques."""
+        critiques_text = "\n\n".join(f"### Critique {i+1}:\n{c.get('critique', str(c))}" for i, c in enumerate(critiques))
+
         user_prompt = f"""## Critiques to Synthesize
 
-{chr(10).join(f"### Critique {i+1}:{c}" for i, c in enumerate(critiques))}
+{critiques_text}
 
 ## Task
 
 Synthesize these critiques into prioritized revision notes.
 Group by:
-1. Major revisions (structural, plot, arc issues)
-2. Minor revisions (continuity, style, pacing)
-3. Polish items (grammar, word choice)
+1. Major revisions (structural, plot, arc issues) - must fix
+2. Minor revisions (continuity, style, pacing) - should fix
+3. Polish items (grammar, word choice) - nice to fix
 
-For each item, provide specific, actionable feedback.
+For each item, provide specific, actionable feedback with location if possible.
 """
 
-        return AgentResponse(
-            success=True,
-            output={"status": "revision_notes_generated"},
-            metadata={"role": "Editor", "critique_count": len(critiques)},
-        )
+        try:
+            result = await self.call_llm(
+                system_prompt=self.build_system_prompt(context),
+                user_prompt=user_prompt,
+            )
+
+            return AgentResponse(
+                success=True,
+                output=result,
+                metadata={"role": "Editor", "critique_count": len(critiques)},
+            )
+        except Exception as e:
+            return AgentResponse(
+                success=False,
+                output=None,
+                error=str(e),
+                metadata={"role": "Editor"},
+            )

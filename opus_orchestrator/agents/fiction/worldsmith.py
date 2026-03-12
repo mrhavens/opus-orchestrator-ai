@@ -79,18 +79,11 @@ class WorldsmithAgent(BaseAgent):
         )
 
     async def execute(self, input_data: Any, context: dict[str, Any]) -> AgentResponse:
-        """Execute the Worldsmith's task to generate world documents.
-
-        Args:
-            input_data: Blueprint + genre + setting requirements
-            context: Additional context
-
-        Returns:
-            AgentResponse with world bible
-        """
+        """Execute the Worldsmith's task to generate world documents."""
         blueprint = input_data.get("blueprint", {})
         genre = input_data.get("genre", "fantasy")
         setting_type = input_data.get("setting_type", "fantasy")
+        raw_content = input_data.get("raw_content", "")
 
         user_prompt = f"""## Task
 
@@ -107,21 +100,31 @@ Ensure all elements are internally consistent and support the story.
 
 ## Content Seed
 
-{input_data.get('raw_content', 'No additional content provided.')}
+{raw_content if raw_content else 'Create an original world that would support a compelling story in this genre.'}
 """
 
-        return AgentResponse(
-            success=True,
-            output={
-                "status": "world_created",
-                "message": "World bible generation would be executed here with LLM",
-            },
-            metadata={
-                "role": "Worldsmith",
-                "genre": genre,
-                "setting_type": setting_type,
-            },
-        )
+        try:
+            result = await self.call_llm(
+                system_prompt=self.build_system_prompt(context),
+                user_prompt=user_prompt,
+            )
+
+            return AgentResponse(
+                success=True,
+                output=result,
+                metadata={
+                    "role": "Worldsmith",
+                    "genre": genre,
+                    "setting_type": setting_type,
+                },
+            )
+        except Exception as e:
+            return AgentResponse(
+                success=False,
+                output=None,
+                error=str(e),
+                metadata={"role": "Worldsmith"},
+            )
 
     async def expand_location(
         self,
@@ -131,33 +134,36 @@ Ensure all elements are internally consistent and support the story.
         pov_character: str,
         context: dict[str, Any],
     ) -> AgentResponse:
-        """Generate detailed location description.
-
-        From Template B in Fiction Fortress Level 2.
-        """
+        """Generate detailed location description."""
         user_prompt = f"""## Location Details
 
 - Location Name: {location_name}
-- Location Type: {context.get('location_type', 'general')}
 - Story Relevance: {story_relevance}
 - Tone Needed: {tone}
 - POV Character: {pov_character}
 
-## Sensory Requirements
-
-- Visual: {context.get('visual', 'Standard')}
-- Auditory: {context.get('auditory', 'Standard')}
-- Olfactory: {context.get('olfactory', 'Standard')}
-- Tactile: {context.get('tactile', 'Standard')}
-- Gustatory: {context.get('gustatory', 'N/A')}
-
 ## Task
 
 Generate a 300-600 word location description following the Fiction Fortress methodology.
+Include sensory details (visual, auditory, olfactory, tactile).
+Make it atmospheric and story-relevant.
 """
 
-        return AgentResponse(
-            success=True,
-            output={"status": "location_expanded"},
-            metadata={"role": "Worldsmith", "location": location_name},
-        )
+        try:
+            result = await self.call_llm(
+                system_prompt=self.build_system_prompt(context),
+                user_prompt=user_prompt,
+            )
+
+            return AgentResponse(
+                success=True,
+                output=result,
+                metadata={"role": "Worldsmith", "location": location_name},
+            )
+        except Exception as e:
+            return AgentResponse(
+                success=False,
+                output=None,
+                error=str(e),
+                metadata={"role": "Worldsmith"},
+            )

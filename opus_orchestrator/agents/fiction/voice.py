@@ -78,17 +78,10 @@ class VoiceAgent(BaseAgent):
         )
 
     async def execute(self, input_data: Any, context: dict[str, Any]) -> AgentResponse:
-        """Execute the Voice agent's task to create style guide and samples.
-
-        Args:
-            input_data: Genre, tone, target audience
-            context: Additional context
-
-        Returns:
-            AgentResponse with style guide and prose samples
-        """
+        """Execute the Voice agent's task to create style guide and samples."""
         genre = input_data.get("genre", "general")
         tone = input_data.get("tone", "neutral")
+        target_audience = input_data.get("target_audience", "General readers")
 
         user_prompt = f"""## Task
 
@@ -96,41 +89,56 @@ Create a voice/style guide and prose samples for:
 
 - Genre: {genre}
 - Tone: {tone}
-- Target Audience: {input_data.get('target_audience', 'General readers')}
+- Target Audience: {target_audience}
 
 ## Guidelines
 
 Follow the Voice agent methodology from your system prompt.
 Include:
-- Word bank
-- Phrase patterns
-- Rhythm map
-- Tone guide
-- 3 sample scenes (opening, dialogue, descriptive)
+- Word bank (preferred vocabulary for this genre/tone)
+- Phrase patterns (recurring constructions)
+- Rhythm map (sentence length distribution)
+- Tone guide (emotional range)
+- 3 sample scenes:
+  1. Opening scene
+  2. Dialogue-heavy scene
+  3. Descriptive/pacific scene
+
+Make the samples vivid and representative of the final prose style.
 """
 
-        return AgentResponse(
-            success=True,
-            output={"status": "voice_created"},
-            metadata={"role": "Voice", "genre": genre, "tone": tone},
-        )
+        try:
+            result = await self.call_llm(
+                system_prompt=self.build_system_prompt(context),
+                user_prompt=user_prompt,
+            )
+
+            return AgentResponse(
+                success=True,
+                output=result,
+                metadata={"role": "Voice", "genre": genre, "tone": tone},
+            )
+        except Exception as e:
+            return AgentResponse(
+                success=False,
+                output=None,
+                error=str(e),
+                metadata={"role": "Voice"},
+            )
 
     async def write_chapter(
         self,
         chapter_spec: dict[str, Any],
-        style_guide: dict[str, Any],
+        style_guide: str,
         context: dict[str, Any],
     ) -> AgentResponse:
-        """Write a complete chapter following the style guide.
-
-        This is the main writing task for the Voice agent.
-        """
+        """Write a complete chapter following the style guide."""
         user_prompt = f"""## Chapter Specification
 
 - Chapter Number: {chapter_spec.get('chapter_number')}
 - Title: {chapter_spec.get('title')}
 - Summary: {chapter_spec.get('summary')}
-- Word Count Target: {chapter_spec.get('word_count_target')}
+- Word Count Target: {chapter_spec.get('word_count_target', 3000)}
 - POV Character: {chapter_spec.get('pov_character', 'Narrator')}
 - Key Events: {', '.join(chapter_spec.get('key_events', []))}
 
@@ -141,22 +149,39 @@ Include:
 ## Task
 
 Write the complete chapter following the style guide and chapter specification.
-Maintain consistent voice throughout.
+Maintain consistent voice throughout. Make it vivid, engaging, and professional quality.
+Start with the chapter title as a heading.
 """
 
-        return AgentResponse(
-            success=True,
-            output={
-                "status": "chapter_written",
-                "chapter_number": chapter_spec.get("chapter_number"),
-            },
-            metadata={"role": "Voice"},
-        )
+        try:
+            result = await self.call_llm(
+                system_prompt=self.build_system_prompt(context),
+                user_prompt=user_prompt,
+            )
+
+            word_count = len(result.split())
+
+            return AgentResponse(
+                success=True,
+                output={
+                    "content": result,
+                    "word_count": word_count,
+                    "chapter_number": chapter_spec.get("chapter_number"),
+                },
+                metadata={"role": "Voice", "word_count": word_count},
+            )
+        except Exception as e:
+            return AgentResponse(
+                success=False,
+                output=None,
+                error=str(e),
+                metadata={"role": "Voice"},
+            )
 
     async def polish_chapter(
         self,
         chapter_content: str,
-        style_guide: dict[str, Any],
+        style_guide: str,
         context: dict[str, Any],
     ) -> AgentResponse:
         """Polish an existing chapter for voice consistency."""
@@ -174,12 +199,28 @@ Polish this chapter for voice consistency. Ensure:
 - Sentence rhythm varies appropriately
 - Word choice matches the style guide
 - Tone remains consistent
-- POV is maintained
+- POV is maintained without head-hopping
 - Prose flows smoothly
+- Show don't tell where possible
+
+Return the polished chapter as your output.
 """
 
-        return AgentResponse(
-            success=True,
-            output={"status": "chapter_polished"},
-            metadata={"role": "Voice", "task": "polish"},
-        )
+        try:
+            result = await self.call_llm(
+                system_prompt=self.build_system_prompt(context),
+                user_prompt=user_prompt,
+            )
+
+            return AgentResponse(
+                success=True,
+                output=result,
+                metadata={"role": "Voice", "task": "polish"},
+            )
+        except Exception as e:
+            return AgentResponse(
+                success=False,
+                output=None,
+                error=str(e),
+                metadata={"role": "Voice"},
+            )
