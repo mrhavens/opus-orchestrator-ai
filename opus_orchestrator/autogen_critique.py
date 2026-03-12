@@ -130,7 +130,15 @@ You do NOT rewrite - you plan revisions. Return: {"revision_plan": [], "prioriti
             max_round=3,
         )
         
-        self.manager = GroupChatManager(groupchat=self.group_chat)
+        # FIX: Add LLM config to manager
+        self.manager = GroupChatManager(
+            groupchat=self.group_chat,
+            llm_config={
+                "model": self.model,
+                "api_key": self.api_key,
+                "temperature": 0.7,
+            }
+        )
     
     def critique_chapter(
         self,
