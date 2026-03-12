@@ -492,17 +492,15 @@ Write ~{plan.word_count_target} words. Begin with chapter title.
         
         config = {"configurable": {"thread_id": thread_id}}
         
-        # LangGraph stream returns dict of node_name -> state
+        # LangGraph stream - accumulate final state
+        result_state = initial_state
         for node_output in self.graph.stream(initial_state, config):
-            # Get the state (last output is final)
+            # node_output is {node_name: state}
             for key, state in node_output.items():
-                if isinstance(state, OpusGraphState):
-                    final_state = state
+                if hasattr(state, 'stage'):  # It's an OpusGraphState
+                    result_state = state
         
-        if final_state:
-            return final_state
-        
-        return initial_state
+        return result_state
 
 
 def run_opus(
