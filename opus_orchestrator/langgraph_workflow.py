@@ -522,6 +522,18 @@ Write ~{plan.word_count_target} words.
         print(f"   Chapters: {len(state.chapters)}")
         print(f"   Words: {total_words:,}")
         
+        # ALSO save to file as backup
+        try:
+            import time
+            filename = f"opus_manuscript_{int(time.time())}.md"
+            with open(filename, 'w') as f:
+                f.write(f"# Opus Generated Manuscript\n\n")
+                f.write(f"Total Words: {total_words}\n\n")
+                f.write(manuscript)
+            print(f"   💾 Saved to: {filename}")
+        except Exception as e:
+            print(f"   ⚠️ Save error: {e}")
+        
         return {
             "manuscript": manuscript,
             "total_word_count": total_words,
@@ -626,6 +638,23 @@ Write ~{plan.word_count_target} words.
             return OpusGraphState(**final_state)
         else:
             print(f"\n[RESULT] No manuscript found in state")
+        
+        # Try to load from most recent file
+        import glob
+        import re
+        files = sorted(glob.glob("opus_manuscript_*.md"))
+        if files:
+            latest = files[-1]
+            print(f"   📄 Loading from: {latest}")
+            with open(latest, 'r') as f:
+                content = f.read()
+                # Parse word count
+                match = re.search(r'Total Words: (\d+)', content)
+                words = int(match.group(1)) if match else 0
+                print(f"   📄 Found {words} words in file")
+                # Create a state with this data
+                final_state.manuscript = content
+                final_state.total_word_count = words
         
         print(f"\n[RESULT] Chapters: {len(final_state.chapters)}, Words: {final_state.total_word_count}")
         
