@@ -31,6 +31,7 @@ from opus_orchestrator.agents.fiction import (
 )
 from opus_orchestrator.config import AgentConfig
 from opus_orchestrator.frameworks import get_framework_prompt, StoryFramework
+from opus_orchestrator.utils.llm_sync import LLMClient
 
 
 # ============== STATE SCHEMA ==============
@@ -200,8 +201,21 @@ class OpusGraph:
         self.voice = VoiceAgent(self.agent_config)
         self.editor = EditorAgent(self.agent_config)
         
+        # Create async event loop for LLM calls
+        self._loop = None
+        
         # Build graph
         self.graph = self._build_graph()
+    
+    def _get_loop(self):
+        """Get or create event loop."""
+        import asyncio
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+        return loop
     
     def _build_graph(self) -> StateGraph:
         """Build the LangGraph."""
@@ -292,6 +306,11 @@ class OpusGraph:
         
         return "iterate"
     
+    def _run_async(self, coro):
+        """Run async coroutine properly."""
+        loop = self._get_loop()
+        return loop.run_until_complete(coro)
+    
     # ============== NODE IMPLEMENTATIONS ==============
     
     def node_seed(self, state: OpusGraphState) -> OpusGraphState:
@@ -306,7 +325,6 @@ class OpusGraph:
         """Stage 1: One sentence summary."""
         print("\n📝 STAGE 1: One sentence...")
         
-        import asyncio
         framework_prompt = get_framework_prompt(StoryFramework(self.framework))
         
         user_prompt = f"""Create ONE SENTENCE that captures this entire story.
@@ -320,7 +338,7 @@ Requirements:
 Seed: {state.seed_concept}
 """
         
-        result = asyncio.run(self.architect.call_llm(framework_prompt, user_prompt))
+        result = self._run_async(self.architect.call_llm(framework_prompt, user_prompt))
         
         state.prewriting.one_sentence = result.strip()
         state.messages.append(f"One sentence: {state.prewriting.one_sentence[:80]}...")
@@ -333,7 +351,6 @@ Seed: {state.seed_concept}
         """Stage 2: One paragraph outline."""
         print("📝 STAGE 2: One paragraph...")
         
-        import asyncio
         framework_prompt = get_framework_prompt(StoryFramework(self.framework))
         
         user_prompt = f"""Expand to ONE PARAGRAPH (4-8 sentences):
@@ -351,7 +368,7 @@ Include:
 One sentence: {state.prewriting.one_sentence}
 """
         
-        result = asyncio.run(self.architect.call_llm(framework_prompt, user_prompt))
+        result = self._run_async(self.architect.call_llm(framework_prompt, user_prompt))
         
         state.prewriting.one_paragraph = result.strip()
         state.messages.append("One paragraph outline complete")
@@ -364,8 +381,7 @@ One sentence: {state.prewriting.one_sentence}
         """Stage 3: Character sheets."""
         print("📝 STAGE 3: Character sheets...")
         
-        import asyncio
-        result = asyncio.run(self.character_lead.execute(
+        result = self._run_async(self.character_lead.execute(
             {"characters": [], "raw_content": state.prewriting.one_paragraph},
             {},
         ))
@@ -385,7 +401,6 @@ One sentence: {state.prewriting.one_sentence}
         """Stage 4: Four page outline."""
         print("📝 STAGE 4: Four-page outline...")
         
-        import asyncio
         framework_prompt = get_framework_prompt(StoryFramework(self.framework))
         
         user_prompt = f"""Create a detailed outline (4 pages worth):
@@ -395,7 +410,7 @@ Outline: {state.prewriting.one_paragraph}
 Characters: {', '.join(c.name for c in state.prewriting.characters)}
 """
         
-        result = asyncio.run(self.architect.call_llm(framework_prompt, user_prompt))
+        result = self._run_async(self.architect.call_llm(framework_prompt, user_prompt))
         
         state.prewriting.outline_sections = [s.strip() for s in result.split("\n\n") if s.strip()]
         state.messages.append("Four-page outline complete")
@@ -408,8 +423,7 @@ Characters: {', '.join(c.name for c in state.prewriting.characters)}
         """Stage 5: Detailed character charts."""
         print("📝 STAGE 5: Character charts...")
         
-        import asyncio
-        result = asyncio.run(self.character_lead.execute(
+        result = self._run_async(self.character_lead.execute(
             {"characters": [], "raw_content": state.prewriting.one_paragraph},
             {},
         ))
@@ -429,7 +443,6 @@ Characters: {', '.join(c.name for c in state.prewriting.characters)}
         """Stage 6: Scene list."""
         print("📝 STAGE 6: Scene list...")
         
-        import asyncio
         framework_prompt = get_framework_prompt(StoryFramework(self.framework))
         
         num_scenes = max(10, self.target_word_count // 1500)
@@ -439,7 +452,7 @@ Characters: {', '.join(c.name for c in state.prewriting.characters)}
 For each: name, description, POV character, location, purpose.
 """
         
-        result = asyncio.run(self.architect.call_llm(framework_prompt, user_prompt))
+        result = self._run_async(self.architect.call_llm(framework_prompt, user_prompt))
         
         scenes = self._parse_scenes(result)
         state.prewriting.scene_list = scenes
@@ -469,13 +482,12 @@ For each: name, description, POV character, location, purpose.
         """Stage 7: Scene descriptions."""
         print("📝 STAGE 7: Scene descriptions...")
         
-        import asyncio
         user_prompt = f"""Describe key scenes:
 
 {chr(10).join(f"- {s.name}: {s.description}" for s in state.prewriting.scene_list[:10])}
 """
         
-        result = asyncio.run(self.architect.call_llm(
+        result = self._run_async(self.architect.call_llm(
             "You are an expert story architect. Create vivid scene descriptions.",
             user_prompt,
         ))
@@ -491,8 +503,7 @@ For each: name, description, POV character, location, purpose.
         """Create style guide."""
         print("🎨 STYLE GUIDE...")
         
-        import asyncio
-        result = asyncio.run(self.voice.execute(
+        result = self._run_async(self.voice.execute(
             {"genre": self.genre, "tone": "neutral", "target_audience": "adult readers"},
             {},
         ))
@@ -544,7 +555,7 @@ For each: name, description, POV character, location, purpose.
 ## Chapter plan: {plan.summary if plan else 'Continue the story'}
 """
         
-        result = asyncio.run(self.voice.write_chapter(
+        result = self._run_async(self.voice.write_chapter(
             {
                 "chapter_number": chapter_num,
                 "title": f"Chapter {chapter_num}",
@@ -575,7 +586,7 @@ For each: name, description, POV character, location, purpose.
         print(f"🔍 Critiquing chapter {chapter_num}...")
         
         import asyncio
-        result = asyncio.run(self.editor.review_chapter(
+        result = self._run_async(self.editor.review_chapter(
             {
                 "chapter_number": chapter_num,
                 "title": f"Chapter {chapter_num}",
