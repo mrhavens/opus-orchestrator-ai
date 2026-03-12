@@ -496,9 +496,13 @@ Write ~{plan.word_count_target} words. Begin with chapter title.
         result_state = initial_state
         for node_output in self.graph.stream(initial_state, config):
             # node_output is {node_name: state}
+            # Last node should be 'complete' with full state
             for key, state in node_output.items():
-                if hasattr(state, 'stage'):  # It's an OpusGraphState
+                if hasattr(state, 'stage'):
                     result_state = state
+        
+        # Debug: print what we got
+        print(f"\n[DEBUG] Final state - chapters: {len(result_state.chapters)}, words: {result_state.total_word_count}")
         
         return result_state
 
