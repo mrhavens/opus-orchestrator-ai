@@ -1,9 +1,14 @@
-"""LangGraph workflow for Opus Orchestrator - FIXED VERSION.
+"""LangGraph workflow for Opus Orchestrator - WITH AUTOGEN.
 
 Key fixes based on Gemini's analysis:
 1. Nodes return dicts instead of mutating state
 2. run() uses stream_mode="values" 
 3. Falls back to get_state() from checkpointer
+
+AutoGen Integration:
+- Multi-agent critique crew (LiteraryCritic, GenreExpert, StoryEditor)
+- GroupChat for collaborative critique
+- Iteration loops until approval
 """
 
 import os
@@ -21,6 +26,7 @@ from langgraph.checkpoint.memory import MemorySaver
 
 from opus_orchestrator.frameworks import get_framework_prompt, StoryFramework
 from opus_orchestrator.utils.llm_sync import LLMClient
+from opus_orchestrator.autogen_critique import create_critique_crew
 
 
 # ============== STATE SCHEMA ==============
@@ -85,6 +91,7 @@ class ChapterState(BaseModel):
     critique_score: float = 0.0
     iterations: int = 0
     approved: bool = False
+    critique_summary: str = ""  # AutoGen critique result
 
 
 class OpusGraphState(BaseModel):
@@ -104,6 +111,10 @@ class OpusGraphState(BaseModel):
     manuscript: str = ""
     total_word_count: int = 0
     
+    # AutoGen integration
+    use_autogen: bool = True  # Enable AutoGen critique
+    critique_iterations: dict[int, int] = Field(default_factory=dict)  # chapter -> iteration count
+    
     validation_errors: list[str] = Field(default_factory=list)
     warnings: list[str] = Field(default_factory=list)
     
@@ -122,14 +133,29 @@ class OpusGraph:
         genre: str = "general",
         target_word_count: int = 80000,
         api_key: Optional[str] = None,
+        use_autogen: bool = True,
     ):
         self.framework = framework
         self.genre = genre
         self.target_word_count = target_word_count
         self.api_key = api_key or os.environ.get("OPENAI_API_KEY")
+        self.use_autogen = use_autogen
         
         # Use synchronous LLM
         self.llm = LLMClient(api_key=self.api_key, provider="openai", model="gpt-4o")
+        
+        # AutoGen critique crew
+        self.critique_crew = None
+        if self.use_autogen:
+            try:
+                self.critique_crew = create_critique_crew(
+                    api_key=self.api_key,
+                    model="gpt-4o"
+                )
+                print("✅ AutoGen critique crew initialized")
+            except Exception as e:
+                print(f"⚠️  AutoGen failed to init: {e}")
+                self.use_autogen = False
         
         # Build graph
         self.graph = self._build_graph()
@@ -397,11 +423,13 @@ Style: {state.style_guide[:500] if state.style_guide else 'Professional fiction'
 """
         
         chapters = {}
+        critique_iterations = state.critique_iterations or {}
         
         for plan in state.prewriting.chapter_plans:
-            print(f"   Writing chapter {plan.chapter_number}...")
+            chapter_num = plan.chapter_number
+            print(f"\n   Writing chapter {chapter_num}...")
             
-            user_prompt = f"""Write Chapter {plan.chapter_number}: {plan.summary}
+            user_prompt = f"""Write Chapter {chapter_num}: {plan.summary}
 
 Story: {state.prewriting.one_sentence}
 Characters: {', '.join(c.name for c in state.prewriting.characters[:3])}
@@ -410,22 +438,73 @@ Write ~{plan.word_count_target} words.
 """
             
             result = self._call_llm(system_prompt, user_prompt)
+            word_count = len(result.split())
             
-            chapters[plan.chapter_number] = ChapterState(
+            print(f"      → Written {word_count} words")
+            
+            # === AUTOGEN CRITIQUE LOOP ===
+            critique_score = 0.75  # Default
+            critique_summary = ""
+            approved = False
+            iterations = 1
+            max_critique_iterations = 2
+            
+            if self.use_autogen and self.critique_crew:
+                print(f"      🔍 Running AutoGen critique...")
+                
+                context = {
+                    "genre": self.genre,
+                    "one_sentence": state.prewriting.one_sentence,
+                    "summary": plan.summary,
+                }
+                
+                # Iterate critique
+                for crit_iter in range(1, max_critique_iterations + 1):
+                    print(f"         Critique round {crit_iter}/{max_critique_iterations}...")
+                    
+                    try:
+                        # Run critique
+                        critique_result = self.critique_crew.critique_chapter(
+                            chapter_content=result.strip(),
+                            chapter_num=chapter_num,
+                            context=context,
+                        )
+                        
+                        critique_score = critique_result.get("overall_score", 0.75)
+                        critique_summary = critique_result.get("summary", "")[:500]
+                        approved = critique_result.get("approved", False)
+                        
+                        print(f"         → Score: {critique_score:.2f}, Approved: {approved}")
+                        
+                        if approved:
+                            break
+                            
+                    except Exception as e:
+                        print(f"         ⚠️ Critique error: {e}")
+                        break
+                    
+                    iterations = crit_iter
+                
+                critique_iterations[chapter_num] = iterations
+            
+            chapters[chapter_num] = ChapterState(
                 content=result.strip(),
-                word_count=len(result.split()),
-                critique_score=0.8,
-                iterations=1,
-                approved=True,
+                word_count=word_count,
+                critique_score=critique_score,
+                iterations=iterations,
+                approved=approved,
+                critique_summary=critique_summary,
             )
             
-            print(f"      → {len(result.split())} words")
+            status = "✅" if approved else "⚠️"
+            print(f"      {status} Chapter {chapter_num} complete: {word_count} words, score: {critique_score:.2f}")
         
         return {
             "chapters": chapters,
+            "critique_iterations": critique_iterations,
             "stage": Stage.WRITING,
             "progress": 0.90,
-            "messages": state.messages + [f"Wrote {len(chapters)} chapters"],
+            "messages": state.messages + [f"Wrote {len(chapters)} chapters with AutoGen critique"],
         }
     
     def node_complete(self, state: OpusGraphState) -> dict:
