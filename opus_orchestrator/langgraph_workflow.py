@@ -492,17 +492,34 @@ Write ~{plan.word_count_target} words. Begin with chapter title.
         
         config = {"configurable": {"thread_id": thread_id}}
         
-        # LangGraph stream - accumulate final state
-        result_state = initial_state
-        for node_output in self.graph.stream(initial_state, config):
-            # node_output is {node_name: state}
-            # Last node should be 'complete' with full state
-            for key, state in node_output.items():
-                if hasattr(state, 'stage'):
-                    result_state = state
+        # Use invoke instead of stream for clean return
+        try:
+            result = self.graph.invoke(initial_state, config)
+            if isinstance(result, OpusGraphState):
+                print(f"\n✅ COMPLETE! Chapters: {len(result.chapters)}, Words: {result.total_word_count}")
+                return result
+            elif isinstance(result, dict):
+                # Get the state from dict
+                for key, value in result.items():
+                    if isinstance(value, OpusGraphState):
+                        print(f"\n✅ COMPLETE! Chapters: {len(value.chapters)}, Words: {value.total_word_count}")
+                        return value
+        except Exception as e:
+            print(f"Error with invoke: {e}")
         
-        # Debug: print what we got
-        print(f"\n[DEBUG] Final state - chapters: {len(result_state.chapters)}, words: {result_state.total_word_count}")
+        # Fallback: try stream
+        result_state = initial_state
+        try:
+            for node_output in self.graph.stream(initial_state, config):
+                for key, state in node_output.items():
+                    if hasattr(state, 'stage'):
+                        result_state = state
+                        if hasattr(state, 'manuscript') and state.manuscript:
+                            print(f"\n[STREAM] Chapter {state.current_chapter}: {state.total_word_count} words")
+        except Exception as e:
+            print(f"Stream error: {e}")
+        
+        print(f"\n[DEBUG] Returning state - chapters: {len(result_state.chapters)}, words: {result_state.total_word_count}")
         
         return result_state
 
