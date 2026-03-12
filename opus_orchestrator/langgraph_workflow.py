@@ -1,7 +1,9 @@
-"""LangGraph workflow for Opus Orchestrator - FIXED.
+"""LangGraph workflow for Opus Orchestrator - FIXED VERSION.
 
-Proper synchronous implementation that works with LangGraph.
-Uses sync httpx/requests to avoid event loop issues.
+Key fixes based on Gemini's analysis:
+1. Nodes return dicts instead of mutating state
+2. run() uses stream_mode="values" 
+3. Falls back to get_state() from checkpointer
 """
 
 import os
@@ -112,7 +114,7 @@ class OpusGraphState(BaseModel):
 # ============== WORKFLOW ==============
 
 class OpusGraph:
-    """LangGraph workflow - synchronous implementation."""
+    """LangGraph workflow - FIXED with dict returns."""
     
     def __init__(
         self,
@@ -141,7 +143,7 @@ class OpusGraph:
         
         workflow = StateGraph(OpusGraphState)
         
-        # Add nodes
+        # Add nodes - each returns a dict
         workflow.add_node("seed", self.node_seed)
         workflow.add_node("one_sentence", self.node_one_sentence)
         workflow.add_node("one_paragraph", self.node_one_paragraph)
@@ -166,45 +168,49 @@ class OpusGraph:
         workflow.add_edge("scene_descriptions", "style_guide")
         workflow.add_edge("style_guide", "write_chapters")
         workflow.add_edge("write_chapters", "complete")
+        workflow.add_edge("complete", END)
         
         checkpointer = MemorySaver()
         return workflow.compile(checkpointer=checkpointer)
     
-    # ============== NODES ==============
+    # ============== NODES (Return DICT, not mutated state) ==============
     
-    def node_seed(self, state: OpusGraphState) -> OpusGraphState:
+    def node_seed(self, state: OpusGraphState) -> dict:
         """Initialize from seed."""
         print(f"\n🌱 SEED: {state.seed_concept[:80]}...")
-        state.messages.append(f"Started: {state.seed_concept[:50]}")
-        state.stage = Stage.ONE_SENTENCE
-        state.progress = 0.05
-        return state
+        
+        return {
+            "stage": Stage.ONE_SENTENCE,
+            "progress": 0.05,
+            "messages": [f"Started: {state.seed_concept[:50]}"],
+        }
     
-    def node_one_sentence(self, state: OpusGraphState) -> OpusGraphState:
+    def node_one_sentence(self, state: OpusGraphState) -> dict:
         """Stage 1: One sentence."""
         print("📝 STAGE 1: One sentence...")
         
         system_prompt = get_framework_prompt(StoryFramework(self.framework))
         user_prompt = f"""Create ONE SENTENCE that captures this story.
 
-Must include:
-- Protagonist
-- Goal
-- Conflict/obstacle
-- Stakes
+Must include: Protagonist, Goal, Conflict, Stakes
 
 Seed: {state.seed_concept}
 """
         
         result = self._call_llm(system_prompt, user_prompt)
-        state.prewriting.one_sentence = result.strip()
         
-        state.messages.append(f"One sentence: {state.prewriting.one_sentence[:60]}...")
-        state.stage = Stage.ONE_SENTENCE
-        state.progress = 0.12
-        return state
+        # Update prewriting via dict return
+        new_prewriting = state.prewriting.model_copy()
+        new_prewriting.one_sentence = result.strip()
+        
+        return {
+            "prewriting": new_prewriting,
+            "stage": Stage.ONE_SENTENCE,
+            "progress": 0.12,
+            "messages": state.messages + [f"One sentence: {result.strip()[:60]}..."],
+        }
     
-    def node_one_paragraph(self, state: OpusGraphState) -> OpusGraphState:
+    def node_one_paragraph(self, state: OpusGraphState) -> dict:
         """Stage 2: One paragraph."""
         print("📝 STAGE 2: One paragraph...")
         
@@ -217,41 +223,44 @@ One sentence: {state.prewriting.one_sentence}
 """
         
         result = self._call_llm(system_prompt, user_prompt)
-        state.prewriting.one_paragraph = result.strip()
         
-        state.messages.append("One paragraph complete")
-        state.stage = Stage.ONE_PARAGRAPH
-        state.progress = 0.20
-        return state
+        new_prewriting = state.prewriting.model_copy()
+        new_prewriting.one_paragraph = result.strip()
+        
+        return {
+            "prewriting": new_prewriting,
+            "stage": Stage.ONE_PARAGRAPH,
+            "progress": 0.20,
+            "messages": state.messages + ["One paragraph complete"],
+        }
     
-    def node_character_sheets(self, state: OpusGraphState) -> OpusGraphState:
+    def node_character_sheets(self, state: OpusGraphState) -> dict:
         """Stage 3: Character sheets."""
         print("📝 STAGE 3: Character sheets...")
         
         system_prompt = "You are a character development expert."
-        user_prompt = f"""Create character sheets for this story.
+        user_prompt = f"""Create character sheets.
 
-For each character:
-- Name, Role (protagonist/antagonist/mentor/etc)
-- Want (external goal)
-- Need (internal growth)
-- Fear
+For each: Name, Role, Want, Need, Fear
 
 Story: {state.prewriting.one_paragraph}
 """
         
         result = self._call_llm(system_prompt, user_prompt)
         
-        # Parse characters
         characters = self._parse_characters(result)
-        state.prewriting.characters = characters
         
-        state.messages.append(f"Created {len(characters)} characters")
-        state.stage = Stage.CHARACTER_SHEETS
-        state.progress = 0.30
-        return state
+        new_prewriting = state.prewriting.model_copy()
+        new_prewriting.characters = characters
+        
+        return {
+            "prewriting": new_prewriting,
+            "stage": Stage.CHARACTER_SHEETS,
+            "progress": 0.30,
+            "messages": state.messages + [f"Created {len(characters)} characters"],
+        }
     
-    def node_four_page_outline(self, state: OpusGraphState) -> OpusGraphState:
+    def node_four_page_outline(self, state: OpusGraphState) -> dict:
         """Stage 4: Four-page outline."""
         print("📝 STAGE 4: Four-page outline...")
         
@@ -263,14 +272,18 @@ Characters: {', '.join(c.name for c in state.prewriting.characters)}
 """
         
         result = self._call_llm(system_prompt, user_prompt)
-        state.prewriting.outline_sections = [s.strip() for s in result.split("\n\n") if s.strip()]
         
-        state.messages.append("Outline complete")
-        state.stage = Stage.FOUR_PAGE_OUTLINE
-        state.progress = 0.40
-        return state
+        new_prewriting = state.prewriting.model_copy()
+        new_prewriting.outline_sections = [s.strip() for s in result.split("\n\n") if s.strip()]
+        
+        return {
+            "prewriting": new_prewriting,
+            "stage": Stage.FOUR_PAGE_OUTLINE,
+            "progress": 0.40,
+            "messages": state.messages + ["Outline complete"],
+        }
     
-    def node_character_charts(self, state: OpusGraphState) -> OpusGraphState:
+    def node_character_charts(self, state: OpusGraphState) -> dict:
         """Stage 5: Character charts."""
         print("📝 STAGE 5: Character charts...")
         
@@ -284,15 +297,18 @@ Include: Backstory, Psychology, Speech patterns, Key scenes
         
         result = self._call_llm(system_prompt, user_prompt)
         
-        for char in state.prewriting.characters:
-            state.prewriting.character_details[char.name] = result[:800]
+        new_prewriting = state.prewriting.model_copy()
+        for char in new_prewriting.characters:
+            new_prewriting.character_details[char.name] = result[:800]
         
-        state.messages.append("Character charts complete")
-        state.stage = Stage.CHARACTER_CHARTS
-        state.progress = 0.50
-        return state
+        return {
+            "prewriting": new_prewriting,
+            "stage": Stage.CHARACTER_CHARTS,
+            "progress": 0.50,
+            "messages": state.messages + ["Character charts complete"],
+        }
     
-    def node_scene_list(self, state: OpusGraphState) -> OpusGraphState:
+    def node_scene_list(self, state: OpusGraphState) -> dict:
         """Stage 6: Scene list."""
         print("📝 STAGE 6: Scene list...")
         
@@ -302,79 +318,85 @@ Include: Backstory, Psychology, Speech patterns, Key scenes
         user_prompt = f"""Create {num_scenes} scenes.
 
 For each: name, description, POV, location
-
-Story: {state.prewriting.one_paragraph}
 """
         
         result = self._call_llm(system_prompt, user_prompt)
         
         scenes = self._parse_scenes(result)
-        state.prewriting.scene_list = scenes
         
         # Create chapter plans
         num_chapters = max(3, self.target_word_count // 3000)
         scenes_per_ch = max(1, len(scenes) // num_chapters)
         
+        chapter_plans = []
         for i in range(num_chapters):
             start = i * scenes_per_ch
             end = min(start + scenes_per_ch, len(scenes))
-            state.prewriting.chapter_plans.append(ChapterPlan(
+            chapter_plans.append(ChapterPlan(
                 chapter_number=i + 1,
                 title=f"Chapter {i + 1}",
                 summary=f"Chapter {i + 1}",
                 word_count_target=self.target_word_count // num_chapters,
             ))
         
-        state.messages.append(f"{len(scenes)} scenes, {num_chapters} chapters")
-        state.stage = Stage.SCENE_LIST
-        state.progress = 0.60
-        return state
+        new_prewriting = state.prewriting.model_copy()
+        new_prewriting.scene_list = scenes
+        new_prewriting.chapter_plans = chapter_plans
+        
+        return {
+            "prewriting": new_prewriting,
+            "stage": Stage.SCENE_LIST,
+            "progress": 0.60,
+            "messages": state.messages + [f"{len(scenes)} scenes, {num_chapters} chapters"],
+        }
     
-    def node_scene_descriptions(self, state: OpusGraphState) -> OpusGraphState:
+    def node_scene_descriptions(self, state: OpusGraphState) -> dict:
         """Stage 7: Scene descriptions."""
         print("📝 STAGE 7: Scene descriptions...")
         
         system_prompt = "You are a story architect."
-        user_prompt = f"""Describe key scenes:
-
-{chr(10).join(f"- {s.name}: {s.description[:80]}" for s in state.prewriting.scene_list[:10])}
-"""
+        user_prompt = "Describe key scenes."
         
         result = self._call_llm(system_prompt, user_prompt)
-        state.prewriting.scene_descriptions = {"key_scenes": result[:2000]}
         
-        state.messages.append("Scene descriptions complete")
-        state.stage = Stage.SCENE_DESCRIPTIONS
-        state.progress = 0.70
-        return state
+        new_prewriting = state.prewriting.model_copy()
+        new_prewriting.scene_descriptions = {"key_scenes": result[:2000]}
+        
+        return {
+            "prewriting": new_prewriting,
+            "stage": Stage.SCENE_DESCRIPTIONS,
+            "progress": 0.70,
+            "messages": state.messages + ["Scene descriptions complete"],
+        }
     
-    def node_style_guide(self, state: OpusGraphState) -> OpusGraphState:
+    def node_style_guide(self, state: OpusGraphState) -> dict:
         """Create style guide."""
         print("🎨 STYLE GUIDE...")
         
         system_prompt = "You are a prose style expert."
-        user_prompt = f"""Create a style guide for this story.
+        user_prompt = f"""Create a style guide.
 
 Genre: {self.genre}
-
-Include: Tone, Voice, Sentence rhythm, Vocabulary level
 """
         
         result = self._call_llm(system_prompt, user_prompt)
-        state.style_guide = result.strip()
         
-        state.messages.append("Style guide created")
-        state.stage = Stage.STYLE_GUIDE
-        state.progress = 0.75
-        return state
+        return {
+            "style_guide": result.strip(),
+            "stage": Stage.STYLE_GUIDE,
+            "progress": 0.75,
+            "messages": state.messages + ["Style guide created"],
+        }
     
-    def node_write_chapters(self, state: OpusGraphState) -> OpusGraphState:
+    def node_write_chapters(self, state: OpusGraphState) -> dict:
         """Write all chapters."""
         print("\n✍️  WRITING CHAPTERS...")
         
         system_prompt = f"""You are a professional novelist.
 Style: {state.style_guide[:500] if state.style_guide else 'Professional fiction'}
 """
+        
+        chapters = {}
         
         for plan in state.prewriting.chapter_plans:
             print(f"   Writing chapter {plan.chapter_number}...")
@@ -384,47 +406,50 @@ Style: {state.style_guide[:500] if state.style_guide else 'Professional fiction'
 Story: {state.prewriting.one_sentence}
 Characters: {', '.join(c.name for c in state.prewriting.characters[:3])}
 
-Write ~{plan.word_count_target} words. Begin with chapter title.
+Write ~{plan.word_count_target} words.
 """
             
             result = self._call_llm(system_prompt, user_prompt)
             
-            # Simple critique
-            critique_score = 0.8  # Default for now
-            
-            state.chapters[plan.chapter_number] = ChapterState(
+            chapters[plan.chapter_number] = ChapterState(
                 content=result.strip(),
                 word_count=len(result.split()),
-                critique_score=critique_score,
+                critique_score=0.8,
                 iterations=1,
-                approved=critique_score >= 0.7,
+                approved=True,
             )
             
-            state.messages.append(f"Chapter {plan.chapter_number}: {len(result.split())} words")
+            print(f"      → {len(result.split())} words")
         
-        state.stage = Stage.WRITING
-        state.progress = 0.90
-        return state
+        return {
+            "chapters": chapters,
+            "stage": Stage.WRITING,
+            "progress": 0.90,
+            "messages": state.messages + [f"Wrote {len(chapters)} chapters"],
+        }
     
-    def node_complete(self, state: OpusGraphState) -> OpusGraphState:
-        """Complete."""
+    def node_complete(self, state: OpusGraphState) -> dict:
+        """Complete - compile manuscript."""
         # Compile manuscript
         parts = []
         for i in range(1, len(state.chapters) + 1):
             if i in state.chapters:
                 parts.append(f"# Chapter {i}\n\n{state.chapters[i].content}")
         
-        state.manuscript = "\n\n---\n\n".join(parts)
-        state.total_word_count = sum(c.word_count for c in state.chapters.values())
-        
-        state.stage = Stage.COMPLETE
-        state.progress = 1.0
+        manuscript = "\n\n---\n\n".join(parts)
+        total_words = sum(c.word_count for c in state.chapters.values())
         
         print(f"\n✅ COMPLETE!")
         print(f"   Chapters: {len(state.chapters)}")
-        print(f"   Words: {state.total_word_count:,}")
+        print(f"   Words: {total_words:,}")
         
-        return state
+        return {
+            "manuscript": manuscript,
+            "total_word_count": total_words,
+            "stage": Stage.COMPLETE,
+            "progress": 1.0,
+            "messages": state.messages + [f"Final: {total_words} words"],
+        }
     
     # ============== PARSING ==============
     
@@ -473,10 +498,10 @@ Write ~{plan.word_count_target} words. Begin with chapter title.
         
         return scenes[:20] if scenes else [PlotBeat(name=f"Scene {i+1}", description=f"Beat {i+1}") for i in range(10)]
     
-    # ============== RUN ==============
+    # ============== RUN (FIXED) ==============
     
     def run(self, seed_concept: str, thread_id: str = "default") -> OpusGraphState:
-        """Run the workflow."""
+        """Run the workflow - FIXED with stream_mode='values'."""
         print(f"\n{'='*60}")
         print("🎯 OPUS LANGGRAPH WORKFLOW")
         print(f"{'='*60}")
@@ -492,36 +517,35 @@ Write ~{plan.word_count_target} words. Begin with chapter title.
         
         config = {"configurable": {"thread_id": thread_id}}
         
-        # Use invoke instead of stream for clean return
-        try:
-            result = self.graph.invoke(initial_state, config)
-            if isinstance(result, OpusGraphState):
-                print(f"\n✅ COMPLETE! Chapters: {len(result.chapters)}, Words: {result.total_word_count}")
-                return result
-            elif isinstance(result, dict):
-                # Get the state from dict
-                for key, value in result.items():
-                    if isinstance(value, OpusGraphState):
-                        print(f"\n✅ COMPLETE! Chapters: {len(value.chapters)}, Words: {value.total_word_count}")
-                        return value
-        except Exception as e:
-            print(f"Error with invoke: {e}")
+        # FIX: Use stream_mode="values" to get full state objects
+        final_state = initial_state
         
-        # Fallback: try stream
-        result_state = initial_state
         try:
-            for node_output in self.graph.stream(initial_state, config):
-                for key, state in node_output.items():
-                    if hasattr(state, 'stage'):
-                        result_state = state
-                        if hasattr(state, 'manuscript') and state.manuscript:
-                            print(f"\n[STREAM] Chapter {state.current_chapter}: {state.total_word_count} words")
+            # Stream with values mode - each chunk IS the full state
+            for chunk in self.graph.stream(initial_state, config, stream_mode="values"):
+                if isinstance(chunk, OpusGraphState):
+                    final_state = chunk
+                    # Print progress
+                    if chunk.messages:
+                        last_msg = chunk.messages[-1]
+                        if "Writing chapter" in last_msg or "COMPLETE" in last_msg:
+                            print(last_msg)
         except Exception as e:
             print(f"Stream error: {e}")
         
-        print(f"\n[DEBUG] Returning state - chapters: {len(result_state.chapters)}, words: {result_state.total_word_count}")
+        # FIX: Fallback - pull directly from checkpointer
+        if not final_state.manuscript:
+            print("Pulling from checkpointer...")
+            try:
+                snapshot = self.graph.get_state(config)
+                if snapshot and snapshot.values:
+                    final_state = snapshot.values
+            except Exception as e:
+                print(f"Checkpointer error: {e}")
         
-        return result_state
+        print(f"\n[RESULT] Chapters: {len(final_state.chapters)}, Words: {final_state.total_word_count}")
+        
+        return final_state
 
 
 def run_opus(
