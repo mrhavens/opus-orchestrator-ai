@@ -1,14 +1,13 @@
-"""Main Opus Orchestrator - Snowflake Method Implementation.
+"""Main Opus Orchestrator - Snowflake Method Implementation with Multiple Frameworks.
 
-Full pipeline following the Snowflake Method for book writing:
-1. One sentence (concept)
-2. One paragraph (outline)
-3. Character sheets
-4. Four-page outline
-5. Detailed character charts
-6. Scene list
-7. Scene descriptions
-8. First draft
+Full pipeline supporting multiple story frameworks:
+- Snowflake Method (fractal expansion)
+- Three-Act Structure
+- Save the Cat (Blake Snyder)
+- Hero's Journey (Joseph Campbell)
+- Story Circle (Dan Harmon)
+- The 7-Point Plot (The Pantone)
+- Fichtean Curve
 """
 
 import asyncio
@@ -35,6 +34,12 @@ from opus_orchestrator.agents.nonfiction import (
     ResearcherAgent,
 )
 from opus_orchestrator.config import OpusConfig, get_config
+from opus_orchestrator.frameworks import (
+    StoryFramework,
+    FRAMEWORKS,
+    get_framework_for_genre,
+    get_framework_prompt,
+)
 from opus_orchestrator.schemas import (
     BookBlueprint,
     BookIntent,
@@ -50,7 +55,7 @@ from opus_orchestrator.state import OpusState
 
 
 class OpusOrchestrator:
-    """Main orchestrator implementing the Snowflake Method."""
+    """Main orchestrator implementing multiple story frameworks."""
 
     def __init__(
         self,
@@ -61,9 +66,23 @@ class OpusOrchestrator:
         intended_outcome: str = "complete novel",
         tone: Optional[str] = None,
         target_word_count: int = 80000,
+        framework: str = "snowflake",
         config: Optional[OpusConfig] = None,
     ):
-        """Initialize the Opus Orchestrator with Snowflake Method."""
+        """Initialize the Opus Orchestrator with selectable framework.
+        
+        Args:
+            repo_url: GitHub URL for content
+            book_type: "fiction" or "nonfiction"
+            genre: Genre (for framework suggestions)
+            target_audience: Who is this for
+            intended_outcome: What to produce
+            tone: Desired tone
+            target_word_count: Target length
+            framework: Story framework to use (snowflake, three-act, save-the-cat, 
+                      hero-journey, story-circle, seven-point, fichtean)
+            config: Optional config override
+        """
         self.config = config or get_config()
 
         if not self.config.agent.api_key:
@@ -71,6 +90,19 @@ class OpusOrchestrator:
 
         self.book_type = BookType(book_type.lower())
         self.repo_url = repo_url
+        
+        # Handle framework
+        if isinstance(framework, str):
+            try:
+                self.framework = StoryFramework(framework.lower())
+            except ValueError:
+                # Default to snowflake if invalid
+                self.framework = StoryFramework.SNOWFLAKE
+        else:
+            self.framework = framework
+        
+        # Get framework info
+        self.framework_info = FRAMEWORKS.get(self.framework, FRAMEWORKS[StoryFramework.SNOWFLAKE])
 
         self.intent = BookIntent(
             book_type=self.book_type,
@@ -171,23 +203,19 @@ Write ONE compelling sentence that captures the entire story.
         return self.one_sentence
 
     async def snowflake_stage_2(self) -> str:
-        """Stage 2: One paragraph summary.
+        """Stage 2: One paragraph outline (framework-dependent).
         
         Expand the one sentence to a paragraph with setup, 3 acts, and resolution.
+        Uses the selected story framework.
         """
-        print("❄️ SNOWFLAKE STAGE 2: One paragraph outline...")
+        print(f"❄️ SNOWFLAKE STAGE 2: One paragraph outline ({self.framework_info['name']})...")
+        
+        # Get framework-specific prompt
+        framework_system_prompt = get_framework_prompt(self.framework)
         
         user_prompt = f"""Expand this one-sentence summary into a full one-paragraph story outline.
 
-Include:
-- Opening image (the "before" state)
-- Setup (normal world, who the protagonist is)
-- Catalyst (what changes everything)
-- Rising action (attempts to solve the problem)
-- Midpoint (major twist or revelation)
-- Complications (things get worse)
-- Crisis (lowest point)
-- Resolution (how it ends)
+Use the {self.framework_info['name']} framework: {self.framework_info.get('description', '')}
 
 ## One sentence:
 {self.one_sentence}
@@ -196,7 +224,7 @@ Include:
 Write one detailed paragraph (4-8 sentences) that tells the complete story arc.
 """
         response = await self.agents["architect"].call_llm(
-            system_prompt="You are an expert story architect. Create detailed, act-structured outlines.",
+            system_prompt=framework_system_prompt,
             user_prompt=user_prompt,
         )
         
@@ -316,26 +344,30 @@ Write comprehensive, detailed character charts.
         return self.character_charts
 
     async def snowflake_stage_6(self) -> str:
-        """Stage 6: Scene list.
+        """Stage 6: Scene list (framework-dependent).
         
-        Create a list of all scenes needed (like index cards).
+        Create a list of all scenes using the selected framework.
         """
-        print("❄️ SNOWFLAKE STAGE 6: Scene list...")
+        print(f"❄️ SNOWFLAKE STAGE 6: Scene list ({self.framework_info['name']})...")
+        
+        # Get framework-specific prompt
+        framework_system_prompt = get_framework_prompt(self.framework)
         
         words_per_scene = 1500  # Average scene length
         num_scenes = max(10, self.intent.target_word_count // words_per_scene)
         
-        user_prompt = f"""Create a complete SCENE LIST for this story.
-
-For each scene, provide:
-- Scene number
-- POV character
-- Setting/location
-- What happens (one line)
-- Purpose (advances plot? reveals character? builds world?)
-- Chapter placement
+        # Get framework beats if available
+        framework_beats = ""
+        if "beats" in self.framework_info:
+            framework_beats = f"\n\n## Framework Beats:\n"
+            for beat_name, beat_desc in self.framework_info["beats"]:
+                framework_beats += f"- {beat_name}: {beat_desc}\n"
+        
+        user_prompt = f"""Create a complete SCENE LIST for this story using the {self.framework_info['name']}.
 
 Target: approximately {num_scenes} scenes for a {self.intent.target_word_count:,} word novel.
+
+{framework_beats}
 
 ## Four-page outline:
 {self.four_page_outline}
@@ -347,7 +379,7 @@ Target: approximately {num_scenes} scenes for a {self.intent.target_word_count:,
 Create a comprehensive scene list with all scenes needed.
 """
         response = await self.agents["architect"].call_llm(
-            system_prompt="You are an expert story architect. Create detailed scene lists.",
+            system_prompt=framework_system_prompt,
             user_prompt=user_prompt,
         )
         
@@ -545,7 +577,7 @@ Make it vivid, engaging, and true to the characters.
             themes=[],
             tone=self.intent.tone or "neutral",
             chapters=[
-                BookBlueprint.model_construct(
+                ChapterBlueprint(
                     chapter_number=i,
                     title=f"Chapter {i}",
                     summary=f"Chapter {i}",
@@ -595,18 +627,21 @@ Make it vivid, engaging, and true to the characters.
     # =========================================================================
 
     async def run(self) -> Manuscript:
-        """Run the full Snowflake Method pipeline."""
+        """Run the full pipeline with selected framework."""
+        framework_name = self.framework_info.get("name", "Unknown")
+        
         print(f"\n{'='*60}")
-        print("❄️  OPUS ORCHESTRATOR - SNOWFLAKE METHOD")
-        print(f"{'='*60}\n")
+        print(f"❄️  OPUS ORCHESTRATOR - {framework_name.upper()}")
+        print(f"{'='*60}")
+        print(f"Framework: {self.framework_info.get('description', '')}\n")
 
         await self.ingest()
 
-        # Pre-writing stages (Snowflake 1-7)
+        # Pre-writing stages
         await self.snowflake_stage_1()  # One sentence
-        await self.snowflake_stage_2()  # One paragraph
+        await self.snowflake_stage_2()  # One paragraph/outline with framework
         await self.snowflake_stage_3()  # Character sheets
-        await self.snowflake_stage_4()  # Four-page outline
+        await self.snowflake_stage_4()  # Expanded outline
         await self.snowflake_stage_5()  # Detailed character charts
         await self.snowflake_stage_6()  # Scene list
         await self.snowflake_stage_7()  # Scene descriptions
@@ -621,11 +656,12 @@ Make it vivid, engaging, and true to the characters.
         manuscript = await self.compile_manuscript()
 
         print(f"\n{'='*60}")
-        print("✅ SNOWFLAKE COMPLETE!")
+        print("✅ COMPLETE!")
         print(f"{'='*60}")
         print(f"📖 Title: {manuscript.title}")
         print(f"📄 Words: {manuscript.total_word_count:,}")
         print(f"📑 Chapters: {len(manuscript.chapters)}")
+        print(f"🎯 Framework: {framework_name}")
 
         return manuscript
 
