@@ -84,8 +84,6 @@ class ArchitectAgent(BaseAgent):
         Returns:
             AgentResponse with BookBlueprint
         """
-        # This is a placeholder - actual implementation would call the LLM
-        # For now, we'll structure the prompt
         raw_content = input_data.get("raw_content", "")
         intent = input_data.get("intent", {})
         genre = intent.get("genre", "general")
@@ -107,23 +105,34 @@ class ArchitectAgent(BaseAgent):
 
 Generate a complete story blueprint following the Architect's methodology.
 Include all sections specified in your system prompt.
+
+Be specific and detailed. The blueprint should be comprehensive enough that another agent could write each chapter from it.
 """
 
-        # In actual implementation, this would call the LLM
-        # For now, return a structured response
-        return AgentResponse(
-            success=True,
-            output={
-                "status": "blueprint_generated",
-                "message": "Blueprint generation would be executed here with LLM",
-            },
-            metadata={
-                "role": "Architect",
-                "input_word_count": len(raw_content.split()),
-                "target_word_count": target_word_count,
-                "genre": genre,
-            },
-        )
+        try:
+            # Call the LLM
+            result = await self.call_llm(
+                system_prompt=self.build_system_prompt(context),
+                user_prompt=user_prompt,
+            )
+
+            return AgentResponse(
+                success=True,
+                output=result,
+                metadata={
+                    "role": "Architect",
+                    "input_word_count": len(raw_content.split()),
+                    "target_word_count": target_word_count,
+                    "genre": genre,
+                },
+            )
+        except Exception as e:
+            return AgentResponse(
+                success=False,
+                output=None,
+                error=str(e),
+                metadata={"role": "Architect"},
+            )
 
     async def expand_chapter(
         self,
@@ -157,13 +166,31 @@ Include all sections specified in your system prompt.
 
 Expand this chapter beat into a detailed scene specification following
 Template B from the Fiction Fortress methodology.
+
+Include:
+1. Opening beat - how the scene opens
+2. Conflict beat - what escalates tension
+3. Turn beat - what changes the situation
+4. Ending beat - what hook or change ends the scene
+
+Be specific about character motivations, dialogue objectives, and emotional progression.
 """
 
-        return AgentResponse(
-            success=True,
-            output={
-                "status": "chapter_expanded",
-                "chapter_number": chapter.chapter_number,
-            },
-            metadata={"role": "Architect", "task": "chapter_expansion"},
-        )
+        try:
+            result = await self.call_llm(
+                system_prompt=self.build_system_prompt(context),
+                user_prompt=user_prompt,
+            )
+
+            return AgentResponse(
+                success=True,
+                output=result,
+                metadata={"role": "Architect", "task": "chapter_expansion"},
+            )
+        except Exception as e:
+            return AgentResponse(
+                success=False,
+                output=None,
+                error=str(e),
+                metadata={"role": "Architect"},
+            )
