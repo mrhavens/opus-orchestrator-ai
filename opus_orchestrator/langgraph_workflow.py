@@ -196,7 +196,7 @@ class OpusGraph:
         workflow.add_edge("write_chapters", "complete")
         workflow.add_edge("complete", END)
         
-        checkpointer = MemorySaver()
+        checkpointer = None  # Disable for simpler debugging
         return workflow.compile(checkpointer=checkpointer)
     
     # ============== NODES (Return DICT, not mutated state) ==============
@@ -589,10 +589,10 @@ Write ~{plan.word_count_target} words.
         
         return scenes[:20] if scenes else [PlotBeat(name=f"Scene {i+1}", description=f"Beat {i+1}") for i in range(10)]
     
-    # ============== RUN (FIXED) ==============
+    # ============== RUN (SIMPLIFIED) ==============
     
     def run(self, seed_concept: str, thread_id: str = "default") -> OpusGraphState:
-        """Run the workflow - FIXED with stream_mode='values'."""
+        """Run the workflow - simplified without checkpointer."""
         print(f"\n{'='*60}")
         print("🎯 OPUS LANGGRAPH WORKFLOW")
         print(f"{'='*60}")
@@ -608,56 +608,37 @@ Write ~{plan.word_count_target} words.
         
         config = {"configurable": {"thread_id": thread_id}}
         
-        # Track final state - capture at each step
-        final_state = initial_state
-        
+        # Use invoke - should return final state directly
         try:
-            # Stream with values mode - each chunk IS the full state
+            result = self.graph.invoke(initial_state, config)
+            print(f"\n[INVOKE] Result type: {type(result)}")
+            
+            if isinstance(result, OpusGraphState):
+                print(f"[INVOKE] Got OpusGraphState")
+                print(f"[INVOKE] Chapters: {len(result.chapters)}")
+                print(f"[INVOKE] Manuscript: {len(result.manuscript) if result.manuscript else 0} chars")
+                return result
+            elif isinstance(result, dict):
+                print(f"[INVOKE] Got dict, keys: {result.keys()}")
+                if 'chapters' in result:
+                    # Build state from dict
+                    return OpusGraphState(**result)
+        except Exception as e:
+            print(f"Invoke error: {e}")
+        
+        # Fallback: try stream
+        print("[FALLBACK] Trying stream...")
+        final_state = initial_state
+        try:
             for chunk in self.graph.stream(initial_state, config, stream_mode="values"):
-                print(f"[STREAM] Got chunk type: {type(chunk)}")
                 if isinstance(chunk, OpusGraphState):
                     final_state = chunk
-                    # Track chapters as we go
-                    if chunk.chapters:
-                        print(f"[STREAM] Chapters so far: {len(chunk.chapters)}, words: {sum(c.word_count for c in chunk.chapters.values())}")
-                elif isinstance(chunk, dict):
-                    print(f"[STREAM] Got dict, keys: {chunk.keys()}")
-                    # Try to reconstruct state
-                    if 'chapters' in chunk and chunk.get('manuscript'):
-                        final_state = OpusGraphState(**chunk)
-                        print(f"[STREAM] Reconstructed from dict: {len(final_state.chapters)} chapters")
+                    if chunk.manuscript:
+                        print(f"[STREAM] Got manuscript: {len(chunk.manuscript)} chars")
         except Exception as e:
             print(f"Stream error: {e}")
         
-        # FIX: Handle both OpusGraphState and dict from checkpointer
-        if hasattr(final_state, 'manuscript') and final_state.manuscript:
-            pass  # Already have state
-        elif isinstance(final_state, dict) and final_state.get('manuscript'):
-            # Convert dict back to state if needed
-            print(f"\n[RESULT] Chapters: {len(final_state.get('chapters', {}))}, Words: {final_state.get('total_word_count', 0)}")
-            return OpusGraphState(**final_state)
-        else:
-            print(f"\n[RESULT] No manuscript found in state")
-        
-        # Try to load from most recent file
-        import glob
-        import re
-        files = sorted(glob.glob("opus_manuscript_*.md"))
-        if files:
-            latest = files[-1]
-            print(f"   📄 Loading from: {latest}")
-            with open(latest, 'r') as f:
-                content = f.read()
-                # Parse word count
-                match = re.search(r'Total Words: (\d+)', content)
-                words = int(match.group(1)) if match else 0
-                print(f"   📄 Found {words} words in file")
-                # Create a state with this data
-                final_state.manuscript = content
-                final_state.total_word_count = words
-        
         print(f"\n[RESULT] Chapters: {len(final_state.chapters)}, Words: {final_state.total_word_count}")
-        
         return final_state
 
 
