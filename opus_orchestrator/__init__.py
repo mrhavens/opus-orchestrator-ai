@@ -26,6 +26,8 @@ from opus_orchestrator.schemas import (
     RawContent,
 )
 from opus_orchestrator.state import OpusState, create_initial_state
+from opus_orchestrator.langgraph_workflow import OpusGraph, run_opus, OpusGraphState
+from opus_orchestrator.frameworks import StoryFramework
 
 __all__ = [
     # Config
@@ -51,9 +53,14 @@ __all__ = [
     "NonfictionWriterAgent",
     "FactCheckerAgent",
     "NonfictionEditorAgent",
-    # Main
+    # LangGraph
+    "OpusGraph",
+    "OpusGraphState",
+    "run_opus",
+    "StoryFramework",
+    # Main (legacy)
     "OpusOrchestrator",
 ]
 
-# Import orchestrator at bottom to avoid circular imports
+# Import legacy orchestrator for backward compatibility
 from opus_orchestrator.orchestrator import OpusOrchestrator
