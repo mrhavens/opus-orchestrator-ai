@@ -596,19 +596,24 @@ Write ~{plan.word_count_target} words.
         
         config = {"configurable": {"thread_id": thread_id}}
         
-        # FIX: Use stream_mode="values" to get full state objects
+        # Track final state - capture at each step
         final_state = initial_state
         
         try:
             # Stream with values mode - each chunk IS the full state
             for chunk in self.graph.stream(initial_state, config, stream_mode="values"):
+                print(f"[STREAM] Got chunk type: {type(chunk)}")
                 if isinstance(chunk, OpusGraphState):
                     final_state = chunk
-                    # Print progress
-                    if chunk.messages:
-                        last_msg = chunk.messages[-1]
-                        if "Writing chapter" in last_msg or "COMPLETE" in last_msg:
-                            print(last_msg)
+                    # Track chapters as we go
+                    if chunk.chapters:
+                        print(f"[STREAM] Chapters so far: {len(chunk.chapters)}, words: {sum(c.word_count for c in chunk.chapters.values())}")
+                elif isinstance(chunk, dict):
+                    print(f"[STREAM] Got dict, keys: {chunk.keys()}")
+                    # Try to reconstruct state
+                    if 'chapters' in chunk and chunk.get('manuscript'):
+                        final_state = OpusGraphState(**chunk)
+                        print(f"[STREAM] Reconstructed from dict: {len(final_state.chapters)} chapters")
         except Exception as e:
             print(f"Stream error: {e}")
         
