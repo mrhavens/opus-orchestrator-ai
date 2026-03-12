@@ -1,6 +1,15 @@
-"""Main Opus Orchestrator class."""
+"""Main Opus Orchestrator - Snowflake Method Implementation.
 
-from __future__ import annotations
+Full pipeline following the Snowflake Method for book writing:
+1. One sentence (concept)
+2. One paragraph (outline)
+3. Character sheets
+4. Four-page outline
+5. Detailed character charts
+6. Scene list
+7. Scene descriptions
+8. First draft
+"""
 
 import asyncio
 import os
@@ -9,7 +18,6 @@ from typing import Any, Optional
 
 from dotenv import load_dotenv
 
-# Load local environment
 load_dotenv("/home/solaria/.openclaw/workspace/opus-orchestrator-ai/.env")
 
 from opus_orchestrator.agents.fiction import (
@@ -32,6 +40,7 @@ from opus_orchestrator.schemas import (
     BookIntent,
     BookType,
     Chapter,
+    ChapterBlueprint,
     ChapterCritique,
     ChapterDraft,
     Manuscript,
@@ -41,7 +50,7 @@ from opus_orchestrator.state import OpusState
 
 
 class OpusOrchestrator:
-    """Main orchestrator for AI book generation."""
+    """Main orchestrator implementing the Snowflake Method."""
 
     def __init__(
         self,
@@ -49,15 +58,14 @@ class OpusOrchestrator:
         book_type: str = "fiction",
         genre: Optional[str] = None,
         target_audience: str = "general readers",
-        intended_outcome: str = "complete manuscript",
+        intended_outcome: str = "complete novel",
         tone: Optional[str] = None,
         target_word_count: int = 80000,
         config: Optional[OpusConfig] = None,
     ):
-        """Initialize the Opus Orchestrator."""
+        """Initialize the Opus Orchestrator with Snowflake Method."""
         self.config = config or get_config()
 
-        # Set API key from environment if not in config
         if not self.config.agent.api_key:
             self.config.agent.api_key = os.environ.get("MINIMAX_API_KEY") or os.environ.get("OPENAI_API_KEY")
 
@@ -75,6 +83,15 @@ class OpusOrchestrator:
 
         self._init_agents()
         self.state: Optional[OpusState] = None
+        
+        # Snowflake method outputs
+        self.one_sentence: str = ""
+        self.one_paragraph: str = ""
+        self.character_sheets: str = ""
+        self.four_page_outline: str = ""
+        self.character_charts: str = ""
+        self.scene_list: str = ""
+        self.scene_descriptions: str = ""
         self.style_guide: str = ""
 
     def _init_agents(self) -> None:
@@ -114,65 +131,275 @@ class OpusOrchestrator:
 
         return self.state
 
-    async def generate_blueprint(self) -> BookBlueprint:
-        """Generate the book blueprint using the Architect agent."""
-        print(f"🧠 Generating blueprint with {self.config.agent.provider}/{self.config.agent.model}...")
+    # =========================================================================
+    # SNOWFLAKE METHOD STAGES
+    # =========================================================================
 
-        # Call Architect
-        architect = self.agents["architect"]
-        response = await architect.execute(
-            {
-                "raw_content": self.state.raw_content.text if self.state.raw_content else "",
-                "intent": self.intent.model_dump(),
-            },
+    async def snowflake_stage_1(self) -> str:
+        """Stage 1: One sentence summary.
+        
+        Take your one-paragraph story summary and cut it down to one sentence.
+        """
+        print("❄️ SNOWFLAKE STAGE 1: One sentence summary...")
+        
+        raw_content = self.state.raw_content.text if self.state.raw_content else ""
+        
+        user_prompt = f"""Create a ONE SENTENCE summary of this story concept.
+
+The sentence should contain:
+- Protagonist's name (or descriptor)
+- Their goal
+- The conflict/obstacle
+- The stakes
+
+Example: "In a world where magic is forbidden, a young mage must master forbidden arts to save her dying brother, even if it means sparking a war with the ruling theocracy."
+
+## Your seed content:
+{raw_content}
+
+## Task:
+Write ONE compelling sentence that captures the entire story.
+"""
+        response = await self.agents["architect"].call_llm(
+            system_prompt="You are an expert story architect. Create concise, compelling summaries.",
+            user_prompt=user_prompt,
+        )
+        
+        self.one_sentence = response.strip()
+        print(f"   → {self.one_sentence}")
+        
+        return self.one_sentence
+
+    async def snowflake_stage_2(self) -> str:
+        """Stage 2: One paragraph summary.
+        
+        Expand the one sentence to a paragraph with setup, 3 acts, and resolution.
+        """
+        print("❄️ SNOWFLAKE STAGE 2: One paragraph outline...")
+        
+        user_prompt = f"""Expand this one-sentence summary into a full one-paragraph story outline.
+
+Include:
+- Opening image (the "before" state)
+- Setup (normal world, who the protagonist is)
+- Catalyst (what changes everything)
+- Rising action (attempts to solve the problem)
+- Midpoint (major twist or revelation)
+- Complications (things get worse)
+- Crisis (lowest point)
+- Resolution (how it ends)
+
+## One sentence:
+{self.one_sentence}
+
+## Task:
+Write one detailed paragraph (4-8 sentences) that tells the complete story arc.
+"""
+        response = await self.agents["architect"].call_llm(
+            system_prompt="You are an expert story architect. Create detailed, act-structured outlines.",
+            user_prompt=user_prompt,
+        )
+        
+        self.one_paragraph = response.strip()
+        print(f"   → {self.one_paragraph[:200]}...")
+        
+        return self.one_paragraph
+
+    async def snowflake_stage_3(self) -> str:
+        """Stage 3: Character sheets (one page per major character).
+        
+        Create character sheets for all major characters.
+        """
+        print("❄️ SNOWFLAKE STAGE 3: Character sheets...")
+        
+        user_prompt = f"""Create character sheets for all major characters in this story.
+
+For each character, provide:
+- Name
+- Role (protagonist, antagonist, love interest, mentor, etc.)
+- Age and physical description
+- Background/history (2-3 sentences)
+- Want (external goal)
+- Need (internal growth)
+- Fear
+- Secret
+- Character arc (how do they change?)
+
+## Story outline:
+{self.one_paragraph}
+
+## Task:
+Write comprehensive character sheets for all major characters.
+"""
+        response = await self.agents["character_lead"].execute(
+            {"characters": [], "raw_content": self.one_paragraph},
             {},
         )
+        
+        self.character_sheets = response.output if isinstance(response.output, str) else str(response.output)
+        print(f"   → Created character sheets ({len(self.character_sheets)} chars)")
+        
+        return self.character_sheets
 
-        if not response.success:
-            raise Exception(f"Blueprint generation failed: {response.error}")
+    async def snowflake_stage_4(self) -> str:
+        """Stage 4: Four-page outline.
+        
+        Expand each sentence of the one-paragraph outline into a full page.
+        """
+        print("❄️ SNOWFLAKE STAGE 4: Four-page outline...")
+        
+        user_prompt = f"""Expand this one-paragraph outline into a detailed four-page outline.
 
-        # Parse response into blueprint
-        # For now, create a basic blueprint from the response
-        blueprint = BookBlueprint(
-            title=self.intent.working_title or "Untitled",
-            genre=self.intent.genre or "general",
-            target_audience=self.intent.target_audience,
-            target_word_count=self.intent.target_word_count,
-            structure="three-act",
-            themes=[],
-            tone=self.intent.tone or "neutral",
-            chapters=[],
+For each major section (setup, 3 acts, resolution), provide:
+- Multiple scenes
+- Character motivations
+- Plot developments
+- World details
+- Dialogue hooks
+
+This should be approximately 4 pages worth of outline material.
+
+## Current outline:
+{self.one_paragraph}
+
+## Characters:
+{self.character_sheets[:1000]}...
+
+## Task:
+Write a comprehensive four-page outline covering the entire story.
+"""
+        response = await self.agents["architect"].call_llm(
+            system_prompt="You are an expert story architect. Create detailed, scene-by-scene outlines.",
+            user_prompt=user_prompt,
         )
-
-        # Try to extract chapters from response if it's detailed
-        response_text = response.output if isinstance(response.output, str) else str(response.output)
         
-        # Basic chapter structure (in real impl, would parse LLM output)
-        words_per_chapter = 3000
-        num_chapters = max(3, self.intent.target_word_count // words_per_chapter)
+        self.four_page_outline = response.strip()
+        print(f"   → Created four-page outline ({len(self.four_page_outline)} chars)")
         
-        for i in range(1, num_chapters + 1):
-            blueprint.chapters.append(
-                BookBlueprint.model_construct(
-                    chapter_number=i,
-                    title=f"Chapter {i}",
-                    summary=f"Chapter {i} of the story",
-                    word_count_target=words_per_chapter,
-                )
-            )
+        return self.four_page_outline
 
-        self.state.blueprint = blueprint
-        self.state.current_stage = "blueprint"
-        self.state.progress = 0.2
-
-        print(f"✅ Blueprint generated: {num_chapters} chapters planned")
+    async def snowflake_stage_5(self) -> str:
+        """Stage 5: Detailed character charts.
         
-        return blueprint
+        Expand character sheets into full character charts with dialogue samples.
+        """
+        print("❄️ SNOWFLAKE STAGE 5: Detailed character charts...")
+        
+        user_prompt = f"""Create detailed character charts for all major characters.
+
+For each character include:
+- Full backstory
+- Psychological profile
+- Speech patterns (with sample dialogue)
+- Character quirks
+- Relationships with other characters
+- How they appear to others vs. who they really are
+- Key scenes they're in
+
+## Characters (basic):
+{self.character_sheets}
+
+## Story outline:
+{self.one_paragraph}
+
+## Task:
+Write comprehensive, detailed character charts.
+"""
+        response = await self.agents["character_lead"].execute(
+            {"characters": [], "raw_content": self.four_page_outline},
+            {},
+        )
+        
+        self.character_charts = response.output if isinstance(response.output, str) else str(response.output)
+        print(f"   → Created detailed character charts")
+        
+        return self.character_charts
+
+    async def snowflake_stage_6(self) -> str:
+        """Stage 6: Scene list.
+        
+        Create a list of all scenes needed (like index cards).
+        """
+        print("❄️ SNOWFLAKE STAGE 6: Scene list...")
+        
+        words_per_scene = 1500  # Average scene length
+        num_scenes = max(10, self.intent.target_word_count // words_per_scene)
+        
+        user_prompt = f"""Create a complete SCENE LIST for this story.
+
+For each scene, provide:
+- Scene number
+- POV character
+- Setting/location
+- What happens (one line)
+- Purpose (advances plot? reveals character? builds world?)
+- Chapter placement
+
+Target: approximately {num_scenes} scenes for a {self.intent.target_word_count:,} word novel.
+
+## Four-page outline:
+{self.four_page_outline}
+
+## Characters:
+{self.character_charts[:1000]}...
+
+## Task:
+Create a comprehensive scene list with all scenes needed.
+"""
+        response = await self.agents["architect"].call_llm(
+            system_prompt="You are an expert story architect. Create detailed scene lists.",
+            user_prompt=user_prompt,
+        )
+        
+        self.scene_list = response.strip()
+        
+        # Parse scene count
+        scene_count = self.scene_list.count("Scene ") + self.scene_list.count("Chapter")
+        print(f"   → Scene list created ({scene_count}+ scenes)")
+        
+        return self.scene_list
+
+    async def snowflake_stage_7(self) -> str:
+        """Stage 7: Scene descriptions.
+        
+        Expand each scene into a full description (like index card back).
+        """
+        print("❄️ SNOWFLAKE STAGE 7: Scene descriptions...")
+        
+        user_prompt = f"""Expand the scene list into detailed scene descriptions.
+
+For each scene, provide:
+- Opening beat
+- Key dialogue points
+- Conflict moment
+- Turning point
+- Closing beat
+
+This is like writing the back of each index card - you know what happens but not the full prose.
+
+## Scene list:
+{self.scene_list}
+
+## Characters:
+{self.character_charts[:500]}...
+
+## Task:
+Write detailed descriptions for key scenes (at least 20 most important scenes).
+"""
+        response = await self.agents["architect"].call_llm(
+            system_prompt="You are an expert story architect. Create vivid scene descriptions.",
+            user_prompt=user_prompt,
+        )
+        
+        self.scene_descriptions = response.strip()
+        print(f"   → Scene descriptions created")
+        
+        return self.scene_descriptions
 
     async def create_style_guide(self) -> str:
-        """Create style guide using Voice agent."""
+        """Create the style guide for prose."""
         print("🎨 Creating style guide...")
-
+        
         voice = self.agents["voice"]
         response = await voice.execute(
             {
@@ -188,23 +415,39 @@ class OpusOrchestrator:
         else:
             self.style_guide = "Professional fiction prose style."
 
-        print("✅ Style guide created")
+        print("   ✅ Style guide created")
         return self.style_guide
 
-    async def write_chapter(self, chapter_num: int) -> ChapterDraft:
-        """Write a single chapter using Voice agent."""
-        blueprint = self.state.blueprint
-        if not blueprint or chapter_num > len(blueprint.chapters):
-            raise ValueError(f"No blueprint or chapter {chapter_num} not found")
-
-        chapter_spec = blueprint.chapters[chapter_num - 1]
+    async def write_chapter(self, chapter_num: int, total_chapters: int) -> ChapterDraft:
+        """Write a single chapter."""
+        print(f"✍️  Writing chapter {chapter_num}/{total_chapters}...")
         
-        print(f"✍️  Writing chapter {chapter_num}/{len(blueprint.chapters)}...")
+        # Build chapter spec from our pre-writing
+        chapter_context = f"""
+## Story context (from Snowflake pre-writing):
 
+ONE SENTENCE: {self.one_sentence}
+ONE PARAGRAPH: {self.one_paragraph}
+SCENE LIST: {self.scene_list[:1000]}...
+STYLE GUIDE: {self.style_guide[:500]}...
+
+## Task:
+Write Chapter {chapter_num} following the scene list and style guide.
+Make it vivid, engaging, and true to the characters.
+"""
+        
         voice = self.agents["voice"]
+        target_words = self.intent.target_word_count // total_chapters
+        
         response = await voice.write_chapter(
-            chapter_spec.model_dump(),
-            self.style_guide,
+            {
+                "chapter_number": chapter_num,
+                "title": f"Chapter {chapter_num}",
+                "summary": f"Chapter {chapter_num} based on scene list",
+                "word_count_target": target_words,
+                "key_events": [],
+            },
+            chapter_context,
             {},
         )
 
@@ -215,41 +458,33 @@ class OpusOrchestrator:
         
         draft = ChapterDraft(
             chapter_number=chapter_num,
-            title=chapter_spec.title,
+            title=f"Chapter {chapter_num}",
             content=output.get("content", ""),
             word_count=output.get("word_count", len(output.get("content", "").split())),
         )
 
         self.state.drafts[chapter_num] = draft
-        
-        progress = 0.2 + (0.6 * chapter_num / len(blueprint.chapters))
+        progress = 0.5 + (0.4 * chapter_num / total_chapters)
         self.state.progress = progress
 
-        print(f"✅ Chapter {chapter_num} written: {draft.word_count} words")
+        print(f"   ✅ Chapter {chapter_num}: {draft.word_count} words")
 
         return draft
 
     async def critique_chapter(self, chapter_num: int) -> ChapterCritique:
-        """Critique a chapter using Editor agent."""
+        """Critique a chapter."""
         draft = self.state.drafts.get(chapter_num)
         if not draft:
             raise ValueError(f"No draft for chapter {chapter_num}")
 
-        print(f"🔍 Critiquing chapter {chapter_num}...")
-
         editor = self.agents["editor"]
         response = await editor.review_chapter(
             draft.model_dump(),
-            {
-                "title": self.state.blueprint.title if self.state.blueprint else "Untitled",
-                "genre": self.intent.genre or "general",
-                "total_chapters": len(self.state.blueprint.chapters) if self.state.blueprint else 0,
-            },
+            {"title": self.one_sentence, "genre": self.intent.genre or "general", "total_chapters": len(self.state.blueprint.chapters) if self.state.blueprint else 0},
             {},
         )
 
         if not response.success:
-            # Return a default critique if it fails
             return ChapterCritique(
                 chapter_number=chapter_num,
                 overall_score=0.7,
@@ -274,29 +509,19 @@ class OpusOrchestrator:
             self.state.critiques[chapter_num] = []
         self.state.critiques[chapter_num].append(critique)
 
-        print(f"✅ Chapter {chapter_num} critiqued: score {critique.overall_score:.2f}")
-
         return critique
 
     async def iterate_chapter(self, chapter_num: int, max_iterations: int = 2) -> Chapter:
-        """Iterate on a chapter until approved or max iterations reached."""
-        draft = self.state.drafts.get(chapter_num)
-        
+        """Iterate on a chapter."""
         for iteration in range(1, max_iterations + 1):
-            print(f"🔄 Iteration {iteration}/{max_iterations} for chapter {chapter_num}")
-            
-            # Critique
             critique = await self.critique_chapter(chapter_num)
             
-            # Check if approved
             if critique.overall_score >= self.config.iteration.approval_threshold:
-                print(f"✅ Chapter {chapter_num} approved!")
+                print(f"   ✅ Chapter {chapter_num} approved! (score: {critique.overall_score:.2f})")
                 break
-            
-            # If not approved and have more iterations, could revise here
-            # For now, we'll proceed with what we have
+            else:
+                print(f"   🔄 Iteration {iteration}: score {critique.overall_score:.2f}")
         
-        # Get final draft
         draft = self.state.drafts.get(chapter_num)
         
         return Chapter(
@@ -306,21 +531,43 @@ class OpusOrchestrator:
             word_count=draft.word_count,
         )
 
+    async def generate_blueprint(self) -> BookBlueprint:
+        """Generate the book blueprint."""
+        words_per_chapter = 3000
+        num_chapters = max(3, self.intent.target_word_count // words_per_chapter)
+        
+        blueprint = BookBlueprint(
+            title=self.intent.working_title or "Untitled",
+            genre=self.intent.genre or "general",
+            target_audience=self.intent.target_audience,
+            target_word_count=self.intent.target_word_count,
+            structure="three-act",
+            themes=[],
+            tone=self.intent.tone or "neutral",
+            chapters=[
+                BookBlueprint.model_construct(
+                    chapter_number=i,
+                    title=f"Chapter {i}",
+                    summary=f"Chapter {i}",
+                    word_count_target=words_per_chapter,
+                )
+                for i in range(1, num_chapters + 1)
+            ],
+        )
+
+        self.state.blueprint = blueprint
+        self.state.current_stage = "blueprint"
+        self.state.progress = 0.1
+
+        return blueprint
+
     async def compile_manuscript(self) -> Manuscript:
         """Compile all chapters into final manuscript."""
-        if not self.state.blueprint:
-            raise ValueError("No blueprint. Run generate_blueprint first.")
-
         num_chapters = len(self.state.blueprint.chapters)
-        print(f"\n📚 Compiling manuscript: {num_chapters} chapters\n")
-
-        chapters = []
         
+        chapters = []
         for i in range(1, num_chapters + 1):
-            # Write chapter
-            await self.write_chapter(i)
-            
-            # Iterate/critique
+            await self.write_chapter(i, num_chapters)
             chapter = await self.iterate_chapter(i)
             chapters.append(chapter)
 
@@ -330,49 +577,81 @@ class OpusOrchestrator:
             genre=self.intent.genre or "general",
             chapters=chapters,
             total_word_count=sum(c.word_count for c in chapters),
+            frontmatter={
+                "one_sentence": self.one_sentence,
+                "one_paragraph": self.one_paragraph,
+                "include_toc": True,
+            },
         )
 
         self.state.manuscript = manuscript
         self.state.current_stage = "complete"
         self.state.progress = 1.0
 
-        print(f"\n✅ Manuscript complete: {manuscript.total_word_count} words")
-
         return manuscript
 
-    async def run(self) -> Manuscript:
-        """Run the full orchestrator pipeline."""
-        print(f"\n{'='*50}")
-        print("🎯 OPUS ORCHESTRATOR - Starting")
-        print(f"{'='*50}\n")
+    # =========================================================================
+    # MAIN RUN METHOD - FULL SNOWFLAKE
+    # =========================================================================
 
-        # Ingest
+    async def run(self) -> Manuscript:
+        """Run the full Snowflake Method pipeline."""
+        print(f"\n{'='*60}")
+        print("❄️  OPUS ORCHESTRATOR - SNOWFLAKE METHOD")
+        print(f"{'='*60}\n")
+
         await self.ingest()
 
+        # Pre-writing stages (Snowflake 1-7)
+        await self.snowflake_stage_1()  # One sentence
+        await self.snowflake_stage_2()  # One paragraph
+        await self.snowflake_stage_3()  # Character sheets
+        await self.snowflake_stage_4()  # Four-page outline
+        await self.snowflake_stage_5()  # Detailed character charts
+        await self.snowflake_stage_6()  # Scene list
+        await self.snowflake_stage_7()  # Scene descriptions
+        
+        # Style and writing
+        await self.create_style_guide()
+        
         # Generate blueprint
         await self.generate_blueprint()
 
-        # Create style guide
-        await self.create_style_guide()
-
-        # Write and iterate chapters
+        # Write and critique chapters
         manuscript = await self.compile_manuscript()
 
-        print(f"\n{'='*50}")
-        print("🎉 OPUS ORCHESTRATOR - Complete!")
-        print(f"{'='*50}\n")
+        print(f"\n{'='*60}")
+        print("✅ SNOWFLAKE COMPLETE!")
+        print(f"{'='*60}")
+        print(f"📖 Title: {manuscript.title}")
+        print(f"📄 Words: {manuscript.total_word_count:,}")
+        print(f"📑 Chapters: {len(manuscript.chapters)}")
 
         return manuscript
 
     def save_manuscript(self, output_path: Optional[Path] = None) -> Path:
-        """Save manuscript to file."""
+        """Save manuscript and pre-writing to files."""
         if not self.state.manuscript:
             raise ValueError("No manuscript to save. Run first.")
 
-        output_path = output_path or Path("./output") / f"{self.state.manuscript.title.lower().replace(' ', '_')}.md"
-        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_dir = output_path or Path("./output")
+        output_dir.mkdir(parents=True, exist_ok=True)
 
-        with open(output_path, "w") as f:
+        # Save manuscript
+        manuscript_path = output_dir / f"{self.state.manuscript.title.lower().replace(' ', '_')}.md"
+        with open(manuscript_path, "w") as f:
             f.write(self.state.manuscript.to_markdown())
 
-        return output_path
+        # Save pre-writing
+        prewriting_path = output_dir / f"{self.state.manuscript.title.lower().replace(' ', '_')}_prewriting.md"
+        with open(prewriting_path, "w") as f:
+            f.write(f"# Pre-Writing: {self.state.manuscript.title}\n\n")
+            f.write(f"## Stage 1: One Sentence\n{self.one_sentence}\n\n")
+            f.write(f"## Stage 2: One Paragraph\n{self.one_paragraph}\n\n")
+            f.write(f"## Stage 3: Character Sheets\n{self.character_sheets}\n\n")
+            f.write(f"## Stage 4: Four-Page Outline\n{self.four_page_outline}\n\n")
+            f.write(f"## Stage 5: Character Charts\n{self.character_charts}\n\n")
+            f.write(f"## Stage 6: Scene List\n{self.scene_list}\n\n")
+            f.write(f"## Stage 7: Scene Descriptions\n{self.scene_descriptions}\n\n")
+
+        return manuscript_path

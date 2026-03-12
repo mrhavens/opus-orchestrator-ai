@@ -73,18 +73,28 @@ def load_config_from_env() -> OpusConfig:
     Reads:
     - MINIMAX_API_KEY or OPENAI_API_KEY for LLM
     - GITHUB_TOKEN for GitHub operations
-    """
-    # Load API keys
-    api_key = _load_env("MINIMAX_API_KEY") or _load_env("OPENAI_API_KEY")
-    github_token = _load_env("GITHUB_TOKEN")
     
-    # Determine provider
-    if _load_env("MINIMAX_API_KEY"):
-        provider = "minimax"
-        default_model = "MiniMax/MiniMax-M2.1"
-    else:
+    Prefers OPENAI_API_KEY if available (more reliable).
+    """
+    # Load API keys - prefer OpenAI as MiniMax key may be invalid
+    openai_key = _load_env("OPENAI_API_KEY")
+    minimax_key = _load_env("MINIMAX_API_KEY")
+    
+    # Use OpenAI by default if available, otherwise try MiniMax
+    if openai_key:
         provider = "openai"
         default_model = "gpt-4o"
+        api_key = openai_key
+    elif minimax_key:
+        provider = "minimax"
+        default_model = "MiniMax/MiniMax-M2.1"
+        api_key = minimax_key
+    else:
+        provider = "openai"  # default
+        default_model = "gpt-4o"
+        api_key = None
+    
+    github_token = _load_env("GITHUB_TOKEN")
     
     agent_config = AgentConfig(
         model=default_model,

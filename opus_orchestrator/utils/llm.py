@@ -19,17 +19,15 @@ class LLMClient:
         model: str = "MiniMax/MiniMax-M2.1",
         base_url: Optional[str] = None,
     ):
-        """Initialize LLM client.
-        
-        Args:
-            api_key: API key for the provider
-            provider: Provider name (minimax, openai, anthropic)
-            model: Model identifier
-            base_url: Optional custom base URL
-        """
+        """Initialize LLM client."""
         self.api_key = api_key or os.environ.get("MINIMAX_API_KEY") or os.environ.get("OPENAI_API_KEY")
         self.provider = provider
         self.model = model
+        
+        # Normalize model name for MiniMax
+        if provider == "minimax":
+            # MiniMax uses model names like "abab6.5s-chat" or "MiniMax-M2.1"
+            self.minimax_model = model.split("/")[-1] if "/" in model else model
         
         # Set base URL based on provider
         if base_url:
@@ -50,17 +48,7 @@ class LLMClient:
         temperature: float = 0.7,
         max_tokens: Optional[int] = None,
     ) -> str:
-        """Make a completion request.
-        
-        Args:
-            system_prompt: System prompt
-            user_prompt: User prompt
-            temperature: Sampling temperature
-            max_tokens: Maximum tokens to generate
-            
-        Returns:
-            Generated text
-        """
+        """Make a completion request."""
         headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
@@ -86,9 +74,9 @@ class LLMClient:
         headers: dict,
     ) -> str:
         """Call MiniMax API."""
-        # MiniMax uses chat/completions format
+        # MiniMax chat completion format
         payload = {
-            "model": self.model,
+            "model": self.minimax_model,
             "messages": [
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt},
@@ -104,10 +92,23 @@ class LLMClient:
             headers=headers,
             json=payload,
         )
-        response.raise_for_status()
+        
+        # Debug output
+        if response.status_code != 200:
+            print(f"MiniMax API error: {response.status_code}")
+            print(f"Response: {response.text[:500]}")
+            response.raise_for_status()
         
         data = response.json()
-        return data["choices"][0]["message"]["content"]
+        
+        # Handle different response formats
+        if "choices" in data:
+            return data["choices"][0]["message"]["content"]
+        elif "choices" in data.get("data", {}):
+            return data["data"]["choices"][0]["message"]["content"]
+        else:
+            # Try to find content in response
+            raise Exception(f"Unexpected MiniMax response: {data}")
 
     async def _complete_openai(
         self,
