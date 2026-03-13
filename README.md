@@ -79,7 +79,23 @@ opus --api-url http://localhost:8000 generate --concept "Your idea"
 |--------|-------------|--------|
 | **GitHub** | Fetch from public/private repos | ✅ |
 | **S3/MinIO** | S3-compatible object storage | ✅ |
-| **Local Files** | Direct file input | ✅ |
+| **Local Files** | Direct file/directory input | ✅ |
+
+### Ingestion CLI Commands
+
+```bash
+# Ingest from GitHub
+opus ingest --repo owner/repo
+
+# Ingest from S3/MinIO
+opus ingest-s3 --bucket my-bucket --prefix notes/
+
+# Ingest from local files/directory
+opus ingest-local ./my-notes/
+opus ingest-local ./manuscript.txt
+opus ingest-local ./folder --extensions md,txt --recursive
+opus ingest-local ./notes --summarize --max-length 5000
+```
 
 ### Deployment
 
@@ -105,11 +121,15 @@ opus --api-url http://localhost:8000 generate --concept "Your idea"
 ### CLI Commands
 
 ```bash
-# Generate manuscript (local, save to file)
+# Generate manuscript from concept (local)
 opus generate --concept "Your story idea" --framework snowflake --words 5000
 
 # Generate from GitHub
 opus generate --repo owner/repo --framework hero-journey --words 80000
+
+# Generate from local files/directory
+opus generate --local ./my-notes/ --framework snowflake --words 5000
+opus generate --local ./manuscript.txt --words 5000
 
 # Generate and save to S3/MinIO
 opus generate --concept "..." --save-s3 my-bucket/manuscripts/
@@ -119,14 +139,16 @@ opus generate --concept "..." --save-s3 my-bucket/path/ --save-s3-endpoint https
 opus generate --concept "..." --save-repo owner/my-manuscripts
 opus generate --concept "..." --save-repo owner/my-manuscripts --save-branch develop --save-commit-msg "New story draft"
 
-# Generate from S3, save to GitHub
-opus generate --repo owner/repo --save-repo owner/output-repo
+# Generate from one source, save to another
+opus generate --repo owner/notes --save-s3 output-bucket/manuscripts/
+opus generate --local ./notes --save-repo owner/output-repo
 
-# Generate from S3, save to different S3 bucket
-opus ingest-s3 --bucket input-bucket --prefix notes/ | opus generate --save-s3 output-bucket/
-
-# Ingest from S3/MinIO
-opus ingest-s3 --bucket my-bucket --prefix notes/ --output content.txt
+# Ingest from various sources
+opus ingest --repo owner/repo
+opus ingest-s3 --bucket my-bucket --prefix notes/
+opus ingest-local ./my-notes/
+opus ingest-local ./folder --extensions md,txt,notes --recursive
+opus ingest-local ./notes --summarize --max-length 5000
 
 # Start API server
 opus serve --port 8000

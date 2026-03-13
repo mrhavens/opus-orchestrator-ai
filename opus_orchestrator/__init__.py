@@ -34,6 +34,7 @@ from opus_orchestrator.langgraph_workflow import OpusGraph, run_opus, OpusGraphS
 from opus_orchestrator.autogen_critique import CritiqueCrew, create_critique_crew
 from opus_orchestrator.utils.github_ingest import GitHubIngestor, create_github_ingestor
 from opus_orchestrator.utils.s3_ingest import S3Ingestor, create_s3_ingestor
+from opus_orchestrator.utils.local_ingest import LocalIngestor, create_local_ingestor
 from opus_orchestrator.frameworks import StoryFramework
 from opus_orchestrator.crews import (
     OpusCrew,
@@ -113,9 +114,12 @@ __all__ = [
     "create_critique_crew",
     "GitHubIngestor",
     "create_github_ingestor",
-    # S3/MinIO (NEW!)
+    # S3/MinIO
     "S3Ingestor",
     "create_s3_ingestor",
+    # Local Files
+    "LocalIngestor",
+    "create_local_ingestor",
 ]
 
 # Import legacy orchestrator for backward compatibility
