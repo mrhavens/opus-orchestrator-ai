@@ -41,6 +41,11 @@ from opus_orchestrator.utils.github_ingest import GitHubIngestor, create_github_
 from opus_orchestrator.utils.s3_ingest import S3Ingestor, create_s3_ingestor
 from opus_orchestrator.utils.local_ingest import LocalIngestor, create_local_ingestor
 from opus_orchestrator.frameworks import StoryFramework
+from opus_orchestrator.nonfiction_frameworks import (
+    NonfictionFramework,
+    get_nonfiction_framework,
+    list_nonfiction_frameworks,
+)
 from opus_orchestrator.crews import (
     OpusCrew,
     FictionCrew,
@@ -97,6 +102,10 @@ __all__ = [
     "OpusGraphState",
     "run_opus",
     "StoryFramework",
+    # Nonfiction Frameworks (NEW!)
+    "NonfictionFramework",
+    "get_nonfiction_framework",
+    "list_nonfiction_frameworks",
     # Crews
     "OpusCrew",
     "FictionCrew",

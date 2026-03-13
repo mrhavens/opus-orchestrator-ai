@@ -211,9 +211,16 @@ Examples:
     gen_parser.add_argument(
         "--framework", "-f",
         default="snowflake",
-        choices=["snowflake", "three-act", "save-the-cat", "hero-journey", 
-                 "story-circle", "seven-point", "fichtean"],
-        help="Story framework to use",
+        choices=[
+            # Story frameworks
+            "snowflake", "three-act", "save-the-cat", "hero-journey", 
+            "story-circle", "seven-point", "fichtean",
+            # Nonfiction frameworks (NEW!)
+            "technical-manual", "codebase-tour", "diataxis-tutorial",
+            "diataxis-howto", "diataxis-explanation", "diataxis-reference",
+            "api-documentation",
+        ],
+        help="Framework to use (story or nonfiction)",
     )
     gen_parser.add_argument(
         "--genre", "-g",
@@ -612,7 +619,44 @@ async def run_generate(args: argparse.Namespace) -> int:
         
         use_autogen = not args.no_autogen
         
-        if args.use_crewai:
+        # Check for nonfiction frameworks (NEW!)
+        nonfiction_frameworks = [
+            "technical-manual", "codebase-tour", "diataxis-tutorial",
+            "diataxis-howto", "diataxis-explanation", "diataxis-reference",
+            "api-documentation",
+        ]
+        
+        if args.framework in nonfiction_frameworks:
+            # Use NonfictionGenerator for rigorous technical frameworks
+            from opus_orchestrator.nonfiction_generator import NonfictionGenerator
+            from opus_orchestrator.nonfiction_frameworks import NonfictionFramework
+            
+            print("📚 Using Nonfiction Framework...\n")
+            
+            # Map framework string to enum
+            framework_map = {
+                "technical-manual": NonfictionFramework.TECHNICAL_MANUAL,
+                "codebase-tour": NonfictionFramework.CODEBASE_TOUR,
+                "diataxis-tutorial": NonfictionFramework.DIAXIS_TUTORIAL,
+                "diataxis-howto": NonfictionFramework.DIAXIS_HOWTO,
+                "diataxis-explanation": NonfictionFramework.DIAXIS_EXPLANATION,
+                "diataxis-reference": NonfictionFramework.DIAXIS_REFERENCE,
+                "api-documentation": NonfictionFramework.API_DOCUMENTATION,
+            }
+            
+            nf_framework = framework_map.get(args.framework, NonfictionFramework.TECHNICAL_MANUAL)
+            
+            gen = NonfictionGenerator(
+                framework=nf_framework,
+                topic=args.concept or "Technical Topic",
+                source_content=seed_concept[:50000],  # Limit for context
+            )
+            
+            manuscript = gen.generate(target_word_count=args.words)
+            
+            print(f"   ✅ Generated {len(manuscript.split())} words using {nf_framework.value}")
+        
+        elif args.use_crewai:
             # Use CrewAI crews
             print("🛠️  Using CrewAI crews...\n")
             
@@ -649,7 +693,6 @@ async def run_generate(args: argparse.Namespace) -> int:
                 framework=args.framework,
                 genre=args.genre,
                 target_word_count=args.words,
-                use_autogen=use_autogen,
             )
             
             manuscript = result.get("manuscript", str(result))

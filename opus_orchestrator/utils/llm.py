@@ -1,16 +1,18 @@
 """LLM client for Opus Orchestrator.
 
-Supports MiniMax and OpenAI providers.
+Supports MiniMax and OpenAI providers - both async and sync.
 """
 
 import os
+import asyncio
 from typing import Any, Optional
 
 import httpx
+import requests
 
 
 class LLMClient:
-    """Simple LLM client for making API calls."""
+    """Simple LLM client for making API calls - supports both sync and async."""
 
     def __init__(
         self,
@@ -26,7 +28,6 @@ class LLMClient:
         
         # Normalize model name for MiniMax
         if provider == "minimax":
-            # MiniMax uses model names like "abab6.5s-chat" or "MiniMax-M2.1"
             self.minimax_model = model.split("/")[-1] if "/" in model else model
         
         # Set base URL based on provider
@@ -39,27 +40,52 @@ class LLMClient:
         else:
             self.base_url = "https://api.openai.com/v1"
         
-        self.client = httpx.AsyncClient(timeout=120.0)
+        # Async client
+        self._async_client = httpx.AsyncClient(timeout=120.0)
 
-    async def complete(
+    def complete(
         self,
         system_prompt: str,
         user_prompt: str,
         temperature: float = 0.7,
         max_tokens: Optional[int] = None,
     ) -> str:
-        """Make a completion request."""
+        """Make a completion request (SYNC - for LangGraph compatibility)."""
         headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
         }
         
         if self.provider == "minimax":
-            return await self._complete_minimax(
+            return self._complete_minimax_sync(
                 system_prompt, user_prompt, temperature, max_tokens, headers
             )
         elif self.provider == "openai":
-            return await self._complete_openai(
+            return self._complete_openai_sync(
+                system_prompt, user_prompt, temperature, max_tokens, headers
+            )
+        else:
+            raise ValueError(f"Unsupported provider: {self.provider}")
+
+    async def complete_async(
+        self,
+        system_prompt: str,
+        user_prompt: str,
+        temperature: float = 0.7,
+        max_tokens: Optional[int] = None,
+    ) -> str:
+        """Make a completion request (ASYNC)."""
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json",
+        }
+        
+        if self.provider == "minimax":
+            return await self._complete_minimax_async(
+                system_prompt, user_prompt, temperature, max_tokens, headers
+            )
+        elif self.provider == "openai":
+            return await self._complete_openai_async(
                 system_prompt, user_prompt, temperature, max_tokens, headers
             )
         else:
@@ -143,7 +169,85 @@ class LLMClient:
 
     async def close(self):
         """Close the HTTP client."""
-        await self.client.aclose()
+        await self._async_client.aclose()
+
+    # =========================================================================
+    # SYNC VERSIONS (for LangGraph compatibility)
+    # =========================================================================
+
+    def _complete_minimax_sync(
+        self,
+        system_prompt: str,
+        user_prompt: str,
+        temperature: float,
+        max_tokens: Optional[int],
+        headers: dict,
+    ) -> str:
+        """Call MiniMax API (sync)."""
+        payload = {
+            "model": self.minimax_model,
+            "messages": [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
+            "temperature": temperature,
+        }
+        
+        if max_tokens:
+            payload["max_tokens"] = max_tokens
+        
+        response = requests.post(
+            f"{self.base_url}/text/chatcompletion_v2",
+            headers=headers,
+            json=payload,
+            timeout=120,
+        )
+        
+        if response.status_code != 200:
+            print(f"MiniMax API error: {response.status_code}")
+            print(f"Response: {response.text[:500]}")
+            response.raise_for_status()
+        
+        data = response.json()
+        
+        if "choices" in data:
+            return data["choices"][0]["message"]["content"]
+        elif "choices" in data.get("data", {}):
+            return data["data"]["choices"][0]["message"]["content"]
+        else:
+            raise Exception(f"Unexpected MiniMax response: {data}")
+
+    def _complete_openai_sync(
+        self,
+        system_prompt: str,
+        user_prompt: str,
+        temperature: float,
+        max_tokens: Optional[int],
+        headers: dict,
+    ) -> str:
+        """Call OpenAI API (sync)."""
+        payload = {
+            "model": self.model,
+            "messages": [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
+            "temperature": temperature,
+        }
+        
+        if max_tokens:
+            payload["max_tokens"] = max_tokens
+        
+        response = requests.post(
+            f"{self.base_url}/chat/completions",
+            headers=headers,
+            json=payload,
+            timeout=120,
+        )
+        response.raise_for_status()
+        
+        data = response.json()
+        return data["choices"][0]["message"]["content"]
 
 
 # Convenience function
