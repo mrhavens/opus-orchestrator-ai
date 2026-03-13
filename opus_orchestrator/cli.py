@@ -82,6 +82,9 @@ class OpusAPIClient:
         tone: str = "literary",
         use_crewai: bool = False,
         use_autogen: bool = True,
+        # Nonfiction options
+        purpose: str = None,
+        category: str = None,
     ) -> dict:
         """Generate a manuscript.
         
@@ -108,6 +111,8 @@ class OpusAPIClient:
             "chapters": chapters,
             "tone": tone,
             "use_crewai": use_crewai,
+            "purpose": purpose,
+            "category": category,
         }
         
         if concept:
@@ -233,6 +238,17 @@ Examples:
         default="fiction",
         choices=["fiction", "nonfiction"],
         help="Book type",
+    )
+    # Nonfiction-specific options
+    gen_parser.add_argument(
+        "--purpose",
+        choices=["learn", "understand", "transform", "decide", "reference", "inspire"],
+        help="Reader purpose (nonfiction): learn (hands-on), understand (concepts), transform (change), decide (choose), reference (manual), inspire (motivation)",
+    )
+    gen_parser.add_argument(
+        "--category",
+        choices=["business", "leadership", "entrepreneurship", "self_help", "memoir", "philosophy", "science", "history", "technology", "finance", "health", "relationships", "creativity", "spirituality", "how_to"],
+        help="Nonfiction category (optional): business, leadership, memoir, etc.",
     )
     gen_parser.add_argument(
         "--words", "-w",
@@ -548,6 +564,8 @@ async def run_generate(args: argparse.Namespace) -> int:
                 tone=args.tone,
                 use_crewai=args.use_crewai,
                 use_autogen=not args.no_autogen,
+                purpose=args.purpose,
+                category=args.category,
             )
             
             print(f"✅ Generation complete!")
