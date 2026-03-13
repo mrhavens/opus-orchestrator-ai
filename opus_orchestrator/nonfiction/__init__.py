@@ -5,11 +5,12 @@ Key components:
 - intake: Conversational intake agent for high-fidelity intent
 - content_infer: Infers purpose from existing blog/content
 - critique_criteria: Purpose-specific evaluation criteria
+- expanded_frameworks: 35+ expert-level frameworks
 """
 
 from opus_orchestrator.nonfiction.classifier import (
     PurposeClassifier,
-    ClassificationResult,
+    ClassificationResult, 
     classify_purpose,
     ReaderPurpose,
 )
@@ -32,6 +33,13 @@ from opus_orchestrator.nonfiction.critique_criteria import (
     evaluate_chapter,
     get_evaluation_prompt,
     list_all_criteria,
+)
+from opus_orchestrator.nonfiction.expanded_frameworks import (
+    EXPANDED_FRAMEWORKS,
+    FRAMEWORKS_BY_CATEGORY,
+    get_frameworks_by_category,
+    suggest_framework_for_book,
+    get_total_framework_count,
 )
 
 __all__ = [
@@ -57,4 +65,10 @@ __all__ = [
     "evaluate_chapter",
     "get_evaluation_prompt",
     "list_all_criteria",
+    # Expanded Frameworks (35+)
+    "EXPANDED_FRAMEWORKS",
+    "FRAMEWORKS_BY_CATEGORY",
+    "get_frameworks_by_category",
+    "suggest_framework_for_book",
+    "get_total_framework_count",
 ]
