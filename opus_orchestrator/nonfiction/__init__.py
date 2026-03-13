@@ -3,6 +3,7 @@
 Key components:
 - classifier: Classifies user input into ReaderPurpose
 - intake: Conversational intake agent for high-fidelity intent
+- content_infer: Infers purpose from existing blog/content
 """
 
 from opus_orchestrator.nonfiction.classifier import (
@@ -18,6 +19,11 @@ from opus_orchestrator.nonfiction.intake import (
     IntakeMode,
     determine_intake,
 )
+from opus_orchestrator.nonfiction.content_infer import (
+    ContentPurposeInferer,
+    ContentAnalysis,
+    infer_purpose_from_content,
+)
 
 __all__ = [
     # Classifier
@@ -31,4 +37,8 @@ __all__ = [
     "IntakeResult",
     "IntakeMode",
     "determine_intake",
+    # Content Inference
+    "ContentPurposeInferer",
+    "ContentAnalysis",
+    "infer_purpose_from_content",
 ]

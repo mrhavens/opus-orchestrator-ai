@@ -6,7 +6,8 @@ by asking clarifying questions or using available signals.
 This agent intelligently combines:
 1. Explicit user flags (--purpose learn)
 2. Keyword classification from concept
-3. Conversational intake (asking questions)
+3. Content inference from existing blog/posts
+4. Conversational intake (asking questions)
 
 The agent weights all inputs to make the best decision.
 """
@@ -16,6 +17,7 @@ from enum import Enum
 from typing import Optional
 
 from opus_orchestrator.nonfiction.classifier import PurposeClassifier, ReaderPurpose
+from opus_orchestrator.nonfiction.content_infer import ContentPurposeInferer, ContentAnalysis
 from opus_orchestrator.nonfiction_taxonomy import (
     select_framework,
     get_frameworks_for_purpose,
@@ -43,7 +45,12 @@ class IntakeInput:
     target_audience: str = ""
     intended_outcome: str = ""
     
-    # Option 3: Previous Q&A (if conversational)
+    # Option 3: Existing content (for inference)
+    content: str = ""
+    content_title: str = ""
+    blog_posts: list = field(default_factory=list)
+    
+    # Option 4: Previous Q&A (if conversational)
     answers: dict[str, str] = field(default_factory=dict)
 
 
@@ -55,7 +62,9 @@ class IntakeResult:
     category: Optional[NonfictionCategory]
     framework: dict
     reasoning: str
-    source: str  # "explicit" | "classifier" | "intake" | "hybrid"
+    source: str  # "explicit" | "classifier" | "content" | "hybrid"
+    content_analysis: Optional[ContentAnalysis] = None
+    all_signals: dict = field(default_factory=dict)
 
 
 class IntakeAgent:
@@ -102,12 +111,22 @@ class IntakeAgent:
         ],
     }
     
+    # Content inference
+    CONTENT_INFERENCE_WEIGHT = 0.4  # Weight for content-based inference
+    
     def __init__(self, llm_client=None):
         self.classifier = PurposeClassifier(llm_client)
+        self.content_inferer = ContentPurposeInferer()
         self.llm_client = llm_client
     
     async def process(self, intake: IntakeInput, mode: IntakeMode = IntakeMode.AUTO) -> IntakeResult:
         """Process intake and determine purpose and framework.
+        
+        All signals are weighted:
+        1. Explicit flags (weight: 1.0) - highest priority
+        2. Content inference (weight: 0.4) - from existing blog/posts
+        3. Keyword classification (weight: 0.3) - from concept
+        4. Conversational (weight: 0.5) - from Q&A
         
         Args:
             intake: All available input signals
@@ -116,31 +135,98 @@ class IntakeAgent:
         Returns:
             IntakeResult with purpose, framework, and reasoning
         """
+        signals = {}  # Track all signals for reasoning
+        
         # Step 1: Check explicit flags (highest priority)
         if intake.explicit_purpose:
             return self._process_explicit(intake)
         
-        # Step 2: Use classifier for clear cases
         if mode == IntakeMode.EXPLICIT:
             return self._need_more_info(intake)
         
-        # Step 3: Auto-classify from concept
+        # Step 2: Content inference (if content provided)
+        content_result = None
+        if intake.content or intake.blog_posts:
+            if intake.blog_posts:
+                content_result = self.content_inferer.infer_from_blog(intake.blog_posts)
+            elif intake.content:
+                content_result = self.content_inferer.analyze(
+                    intake.content, 
+                    title=intake.content_title
+                )
+            signals["content"] = content_result
+        
+        # Step 3: Keyword classification from concept
         classifier_result = self.classifier._keyword_classify(
             concept=intake.concept,
             target_audience=intake.target_audience,
             intended_outcome=intake.intended_outcome,
         )
+        signals["concept"] = classifier_result
         
-        # If high confidence, use it
-        if classifier_result.confidence >= 0.7:
-            return self._build_result_from_classification(intake, classifier_result, "classifier")
+        # Step 4: WEIGHTED DECISION - combine signals
+        purpose_scores: dict[ReaderPurpose, float] = {p: 0.0 for p in ReaderPurpose}
         
-        # Step 4: If conversational and low confidence, ask questions
-        if mode == IntakeMode.CONVERSATIONAL and classifier_result.confidence < 0.5:
+        # Add content inference (if available)
+        if content_result and content_result.confidence > 0.3:
+            purpose_scores[content_result.purpose] += (
+                content_result.confidence * self.CONTENT_INFERENCE_WEIGHT
+            )
+        
+        # Add classifier result
+        purpose_scores[classifier_result.purpose] += (
+            classifier_result.confidence * 0.3
+        )
+        
+        # Find winning purpose
+        best_purpose = max(purpose_scores, key=purpose_scores.get)
+        best_score = purpose_scores[best_purpose]
+        
+        # Calculate final confidence
+        confidence = min(0.95, best_score)
+        
+        # If confidence is low and in conversational mode, ask questions
+        if confidence < 0.4 and mode == IntakeMode.CONVERSATIONAL:
             return self._need_more_info(intake)
         
-        # Step 5: Fall back to classification even with medium confidence
-        return self._build_result_from_classification(intake, classifier_result, "classifier")
+        # Determine source
+        if content_result and content_result.confidence > 0.5:
+            source = "content"
+        elif content_result and classifier_result.confidence > 0.3:
+            source = "hybrid"
+        else:
+            source = "classifier"
+        
+        # Get category from input
+        category = None
+        if intake.explicit_category:
+            try:
+                category = NonfictionCategory(intake.explicit_category.lower())
+            except ValueError:
+                pass
+        
+        # Select framework
+        framework = select_framework(
+            purpose=best_purpose,
+            category=category,
+        )
+        
+        # Build reasoning
+        reasons = []
+        if content_result:
+            reasons.append(f"content: {content_result.reasoning}")
+        reasons.append(f"concept: {classifier_result.reasoning}")
+        
+        return IntakeResult(
+            purpose=best_purpose,
+            confidence=confidence,
+            category=category,
+            framework=framework,
+            reasoning=" | ".join(reasons),
+            source=source,
+            content_analysis=content_result,
+            all_signals=signals,
+        )
     
     def _process_explicit(self, intake: IntakeInput) -> IntakeResult:
         """Process when user provided explicit purpose."""
@@ -171,6 +257,8 @@ class IntakeAgent:
             framework=framework,
             reasoning=f"Explicit user selection: {intake.explicit_purpose}",
             source="explicit",
+            content_analysis=None,
+            all_signals={"explicit": intake.explicit_purpose},
         )
     
     def _process_auto(self, intake: IntakeInput) -> IntakeResult:
@@ -224,6 +312,8 @@ class IntakeAgent:
             framework=select_framework(purpose=ReaderPurpose.UNDERSTAND),
             reasoning="Input ambiguous - defaulted to UNDERSTAND. Use --purpose flag for explicit selection.",
             source="intake",
+            content_analysis=None,
+            all_signals={},
         )
     
     def get_questions(self, purpose: Optional[ReaderPurpose] = None) -> list[str]:
