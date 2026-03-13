@@ -43,6 +43,34 @@ class IterationConfig(BaseModel):
     auto_proceed_threshold: float = Field(default=0.9, description="Score to auto-approve")
 
 
+class CostConfig(BaseModel):
+    """Configuration for cost controls and rate limiting."""
+    
+    max_tokens_per_run: Optional[int] = Field(
+        default=None, 
+        description="Maximum tokens allowed per generation run"
+    )
+    max_cost_usd: Optional[float] = Field(
+        default=None,
+        description="Maximum cost allowed per generation run (USD)"
+    )
+    track_usage: bool = Field(
+        default=True,
+        description="Track cumulative token usage"
+    )
+    # Token prices (approximate, per 1M tokens)
+    price_per_million_tokens: dict[str, float] = Field(
+        default_factory=lambda: {
+            "gpt-4o": 15.00,
+            "gpt-4o-mini": 0.60,
+            "claude-3-opus": 15.00,
+            "claude-3-sonnet": 3.00,
+            "minimax": 1.00,  # Approximate
+        },
+        description="Price per million tokens by model"
+    )
+
+
 class OutputConfig(BaseModel):
     """Configuration for output generation."""
 
@@ -59,6 +87,7 @@ class OpusConfig(BaseModel):
     fortress: FortressConfig = Field(default_factory=FortressConfig)
     agent: AgentConfig = Field(default_factory=AgentConfig)
     iteration: IterationConfig = Field(default_factory=IterationConfig)
+    cost: CostConfig = Field(default_factory=CostConfig)
     output: OutputConfig = Field(default_factory=OutputConfig)
 
     github_token: Optional[str] = Field(default=None, description="GitHub token for private repos")
@@ -113,7 +142,7 @@ _config: Optional[OpusConfig] = None
 
 
 def get_config() -> OpusConfig:
-    """Get the global configuration instance."""
+    """Get the global configuration instance with validation."""
     global _config
     if _config is None:
         # Try to load from environment
@@ -121,7 +150,32 @@ def get_config() -> OpusConfig:
             _config = load_config_from_env()
         except Exception:
             _config = OpusConfig()
+    
+    # Validate API keys are present
+    _validate_config(_config)
+    
     return _config
+
+
+def _validate_config(config: OpusConfig) -> None:
+    """Validate configuration at startup.
+    
+    Raises:
+        ValueError: If required configuration is missing
+    """
+    errors = []
+    
+    # Check for API key
+    if not config.agent.api_key:
+        # Check environment
+        if not os.environ.get("OPENAI_API_KEY") and not os.environ.get("MINIMAX_API_KEY"):
+            errors.append(
+                "No LLM API key found. Set OPENAI_API_KEY or MINIMAX_API_KEY environment variable."
+            )
+    
+    if errors:
+        error_msg = "\n".join(errors)
+        raise ValueError(f"Configuration validation failed:\n{error_msg}")
 
 
 def set_config(config: OpusConfig) -> None:
