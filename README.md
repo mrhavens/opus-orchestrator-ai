@@ -2,16 +2,49 @@
 
 > Full-flow AI book generation system using **LangGraph**, **CrewAI**, **AutoGen**, and **PydanticAI**
 
-A comprehensive, production-ready system for generating publication-ready manuscripts from raw content.
+A comprehensive, production-ready system for generating publication-ready manuscripts.
 
 ---
 
-## ⚡ Quick Start
+## ⚡ Quick Install
+
+### One-Line Installer (Recommended)
 
 ```bash
-# Install
-pip install opus-orchestrator-ai
+# Install and start web UI
+curl -sSL https://raw.githubusercontent.com/mrhavens/opus-orchestrator-ai/main/install.sh | bash -s -- --api-key YOUR_OPENAI_KEY --start
+```
 
+With options:
+```bash
+curl -sSL https://raw.githubusercontent.com/mrhavens/opus-orchestrator-ai/main/install.sh | bash -s -- \
+  --api-key YOUR_KEY \
+  --github-token YOUR_GH_TOKEN \
+  --port 8080 \
+  --start
+```
+
+### Or Pip Install
+
+```bash
+pip install opus-orchestrator-ai
+pip install opus-orchestrator-ai[all]  # With server + storage
+```
+
+### Or Clone
+
+```bash
+git clone https://github.com/mrhavens/opus-orchestrator-ai.git
+cd opus-orchestrator-ai
+pip install -e .
+pip install fastapi uvicorn
+```
+
+---
+
+## ⚡ Quick Start (After Install)
+
+```bash
 # Generate a manuscript (local mode)
 opus generate --concept "A robot dreams of electric sheep" --words 5000
 
