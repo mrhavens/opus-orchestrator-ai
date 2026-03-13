@@ -240,16 +240,58 @@ End with a final verdict: APPROVED, MINOR_REVISIONS, or MAJOR_REVISIONS.
             # Check if approved
             if critique["approved"]:
                 print(f"   ✅ Chapter {chapter_num} approved!")
-                return critique
+                return {
+                    **critique,
+                    "revised_content": current_content,
+                }
             
-            # If not approved and have more iterations, continue
+            # Not approved - get revision suggestions and apply them
             if iteration < max_iterations:
-                print(f"   📝 Score: {critique['overall_score']:.2f} - continuing...")
-                # In production: pass feedback to writer agent for revision
+                print(f"   📝 Score: {critique['overall_score']:.2f} - applying revisions...")
+                
+                # Use the Writer agent to revise based on critique
+                revision_suggestions = critique.get("summary", "")[:2000]
+                
+                try:
+                    # Request revision from Writer agent
+                    revision_request = f"""Revise Chapter {chapter_num} based on critique feedback.
+
+## Current Chapter Content:
+{current_content[:3000]}...
+
+## Critique Feedback:
+{revision_suggestions}
+
+## Your Task:
+Revise the chapter to address the weaknesses identified in the critique.
+Preserve the strengths. Improve the story, pacing, and prose.
+"""
+                    # Use the writer agent to revise
+                    revision_result = self.agents["writer"].initiate_chat(
+                        self.manager,
+                        message=revision_request,
+                        summary_method="reflection_with_llm",
+                    )
+                    
+                    # Extract revised content from the chat
+                    if hasattr(revision_result, 'chat_history'):
+                        # Get the last response as revised content
+                        revised = revision_result.chat_history[-1].get('content', '') if revision_result.chat_history else current_content
+                        if revised and len(revised) > 100:
+                            current_content = revised
+                            print(f"   ✏️  Revision applied, new length: {len(current_content)} chars")
+                        else:
+                            print(f"   ⚠️  No valid revision received, keeping current content")
+                    
+                except Exception as e:
+                    print(f"   ⚠️  Revision failed: {e}, continuing with current content")
         
-        # Return last critique
+        # Return last critique with final content
         print(f"   ⚠️  Max iterations reached")
-        return critique
+        return {
+            **critique,
+            "revised_content": current_content,
+        }
 
 
 def create_critique_crew(

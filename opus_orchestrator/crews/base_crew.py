@@ -18,30 +18,34 @@ def get_crewai_llm(provider: str = "openai", model: str = "gpt-4o") -> LLM:
     """Get a CrewAI LLM instance.
     
     Args:
-        provider: LLM provider (openai, anthropic, etc.)
+        provider: LLM provider (openai, anthropic, minimax)
         model: Model name
         
     Returns:
         Configured CrewAI LLM
     """
-    api_key = os.environ.get("OPENAI_API_KEY")
-    
+    # Get API key based on provider
     if provider == "openai":
-        return LLM(
-            model="openai/" + model,
-            api_key=api_key,
-        )
+        api_key = os.environ.get("OPENAI_API_KEY")
+        model_name = f"openai/{model}"
     elif provider == "anthropic":
-        return LLM(
-            model="anthropic/" + model,
-            api_key=os.environ.get("ANTHROPIC_API_KEY"),
-        )
+        api_key = os.environ.get("ANTHROPIC_API_KEY")
+        model_name = f"anthropic/{model}"
+    elif provider == "minimax":
+        api_key = os.environ.get("MINIMAX_API_KEY")
+        # MiniMax model format
+        model_name = f"minimax/{model}"
     else:
-        # Default to OpenAI
-        return LLM(
-            model="openai/gpt-4o",
-            api_key=api_key,
-        )
+        # Unknown provider - raise error instead of silently using OpenAI
+        raise ValueError(f"Unknown LLM provider: {provider}. Use: openai, anthropic, or minimax")
+    
+    if not api_key:
+        raise ValueError(f"API key not found for provider: {provider}")
+    
+    return LLM(
+        model=model_name,
+        api_key=api_key,
+    )
 
 
 class OpusCrew:
