@@ -2,6 +2,10 @@
 
 Full-flow AI book generation using LangGraph, CrewAI, AutoGen, and PydanticAI.
 Integrates Fiction Fortress and Nonfiction Fortress methodologies.
+
+Usage:
+    python -m opus_orchestrator generate --concept "Your story idea"
+    opus generate --concept "Your story idea"  # If installed
 """
 
 from opus_orchestrator.agents.fiction import (
@@ -30,6 +34,13 @@ from opus_orchestrator.langgraph_workflow import OpusGraph, run_opus, OpusGraphS
 from opus_orchestrator.autogen_critique import CritiqueCrew, create_critique_crew
 from opus_orchestrator.utils.github_ingest import GitHubIngestor, create_github_ingestor
 from opus_orchestrator.frameworks import StoryFramework
+from opus_orchestrator.crews import (
+    OpusCrew,
+    FictionCrew,
+    NonfictionCrew,
+    create_fiction_crew,
+    create_nonfiction_crew,
+)
 
 __all__ = [
     # Config
@@ -60,8 +71,18 @@ __all__ = [
     "OpusGraphState",
     "run_opus",
     "StoryFramework",
-    # Main (legacy)
+    # Crews (NEW!)
+    "OpusCrew",
+    "FictionCrew",
+    "NonfictionCrew",
+    "create_fiction_crew",
+    "create_nonfiction_crew",
+    # Main
     "OpusOrchestrator",
+    "CritiqueCrew",
+    "create_critique_crew",
+    "GitHubIngestor",
+    "create_github_ingestor",
 ]
 
 # Import legacy orchestrator for backward compatibility
