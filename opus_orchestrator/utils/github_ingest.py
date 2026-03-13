@@ -11,7 +11,7 @@ from typing import Any, Optional
 import requests
 from dotenv import load_dotenv
 
-load_dotenv("/home/solaria/.openclaw/workspace/opus-orchestrator-ai/.env")
+load_dotenv()
 
 
 class GitHubIngestor:

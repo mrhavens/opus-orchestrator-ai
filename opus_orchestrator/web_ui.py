@@ -14,7 +14,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from dotenv import load_dotenv
 
-load_dotenv("/home/solaria/.openclaw/workspace/opus-orchestrator-ai/.env")
+load_dotenv()
 
 
 # HTML Template for the UI

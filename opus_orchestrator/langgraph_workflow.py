@@ -16,7 +16,7 @@ from typing import Any, Optional
 
 from dotenv import load_dotenv
 
-load_dotenv("/home/solaria/.openclaw/workspace/opus-orchestrator-ai/.env")
+load_dotenv()
 
 from pydantic import BaseModel, Field, ConfigDict
 from enum import Enum

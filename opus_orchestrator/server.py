@@ -12,7 +12,7 @@ from fastapi.responses import JSONResponse, RedirectResponse
 from pydantic import BaseModel, Field
 from dotenv import load_dotenv
 
-load_dotenv("/home/solaria/.openclaw/workspace/opus-orchestrator-ai/.env")
+load_dotenv()
 
 from opus_orchestrator.config import get_config
 from opus_orchestrator import run_opus, OpusOrchestrator

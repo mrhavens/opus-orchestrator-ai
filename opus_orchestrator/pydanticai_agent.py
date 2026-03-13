@@ -10,7 +10,7 @@ from pydantic import BaseModel
 from pydantic_ai import Agent
 from dotenv import load_dotenv
 
-load_dotenv("/home/solaria/.openclaw/workspace/opus-orchestrator-ai/.env")
+load_dotenv()
 
 from opus_orchestrator.config import get_config
 

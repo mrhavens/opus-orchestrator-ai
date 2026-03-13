@@ -9,7 +9,7 @@ from typing import Any, Optional
 from crewai import Agent, Crew, LLM, Process, Task
 from dotenv import load_dotenv
 
-load_dotenv("/home/solaria/.openclaw/workspace/opus-orchestrator-ai/.env")
+load_dotenv()
 
 from opus_orchestrator.config import get_config
 
