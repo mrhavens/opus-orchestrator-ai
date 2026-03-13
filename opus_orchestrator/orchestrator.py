@@ -158,6 +158,42 @@ class OpusOrchestrator:
         return self.state
 
     # =========================================================================
+    # GITHUB INGESTION
+    # =========================================================================
+
+    def ingest_from_github(self, repo: str, include_readme: bool = True) -> RawContent:
+        """Ingest content from a GitHub repository.
+        
+        Args:
+            repo: "owner/repo" format (e.g., "mrhavens/my-notes")
+            include_readme: Whether to include README files
+            
+        Returns:
+            RawContent with the combined text from the repo
+        """
+        from opus_orchestrator.utils.github_ingest import GitHubIngestor
+        
+        print(f"📥 Loading from GitHub: {repo}")
+        
+        github_token = self.config.github_token or os.environ.get("GITHUB_TOKEN")
+        ingestor = GitHubIngestor(token=github_token)
+        
+        result = ingestor.ingest_repo(repo, include_readme=include_readme)
+        
+        print(f"   Found {result['file_count']} files")
+        print(f"   Total content: {result['total_chars']:,} characters")
+        
+        return RawContent(
+            content_type="github",
+            text=result["combined_text"],
+            metadata={
+                "repo": repo,
+                "files": list(result["files"].keys()),
+                "file_count": result["file_count"],
+            },
+        )
+
+    # =========================================================================
     # SNOWFLAKE METHOD STAGES
     # =========================================================================
 
