@@ -316,6 +316,26 @@ Examples:
     )
     
     # -------------------------------------------------------------------------
+    # UI COMMAND (Web Interface)
+    # -------------------------------------------------------------------------
+    ui_parser = subparsers.add_parser(
+        "ui",
+        help="Start web UI only (no API)",
+        description="Start the novice-friendly web interface",
+    )
+    ui_parser.add_argument(
+        "--host",
+        default="0.0.0.0",
+        help="Host to bind to (default: 0.0.0.0)",
+    )
+    ui_parser.add_argument(
+        "--port", "-p",
+        type=int,
+        default=8080,
+        help="Port to bind to (default: 8080)",
+    )
+    
+    # -------------------------------------------------------------------------
     # INGEST COMMAND (GitHub)
     # -------------------------------------------------------------------------
     ingest_parser = subparsers.add_parser(
@@ -771,6 +791,29 @@ async def run_serve(args: argparse.Namespace) -> int:
     return 0
 
 
+async def run_ui(args: argparse.Namespace) -> int:
+    """Start the web UI only."""
+    print(f"\n🎨 Starting Opus Web UI...")
+    print(f"   Host: {args.host}")
+    print(f"   Port: {args.port}")
+    print(f"   UI: http://{args.host}:{args.port}/\n")
+    
+    try:
+        from opus_orchestrator.server import create_app
+        import uvicorn
+        
+        app = create_app(include_ui=True)
+        config = uvicorn.Config(app, host=args.host, port=args.port, log_level="info")
+        server = uvicorn.Server(config)
+        await server.serve()
+    except ImportError as e:
+        print(f"Error: {e}")
+        print("Run `pip install fastapi uvicorn` to enable web UI")
+        return 1
+    
+    return 0
+
+
 def run_ingest(args: argparse.Namespace) -> int:
     """Ingest content from GitHub."""
     from opus_orchestrator import OpusOrchestrator
@@ -1035,6 +1078,7 @@ async def main_async(args: argparse.Namespace) -> int:
     commands = {
         "generate": run_generate,
         "serve": run_serve,
+        "ui": run_ui,
         "ingest": run_ingest,
         "ingest-s3": run_s3_ingest,
         "ingest-local": run_local_ingest,
@@ -1045,7 +1089,7 @@ async def main_async(args: argparse.Namespace) -> int:
     }
     
     if args.command in commands:
-        if args.command in ["generate", "serve"]:
+        if args.command in ["generate", "serve", "ui"]:
             return await commands[args.command](args)
         else:
             return commands[args.command](args)

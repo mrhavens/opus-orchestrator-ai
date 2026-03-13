@@ -97,7 +97,7 @@ async def lifespan(app: FastAPI):
 # CREATE APP
 # =============================================================================
 
-def create_app() -> FastAPI:
+def create_app(include_ui: bool = True) -> FastAPI:
     """Create and configure the FastAPI application."""
     app = FastAPI(
         title="Opus Orchestrator API",
@@ -110,6 +110,7 @@ def create_app() -> FastAPI:
 - **AutoGen Critique**: Multi-agent debate for editorial feedback
 - **PydanticAI Validation**: Structured output validation
 - **GitHub Ingestion**: Pull content from repositories
+- **S3 Upload**: Upload manuscripts to S3-compatible storage
 
 ## Quick Start
 
@@ -126,6 +127,13 @@ curl -X POST "http://localhost:8000/ingest" \\
   -H "Content-Type: application/json" \\
   -d '{"repo": "owner/my-book-notes"}'
 ```
+
+3. Upload to S3:
+```bash
+curl -X POST "http://localhost:8000/upload/s3" \\
+  -H "Content-Type: application/json" \\
+  -d '{"content": "# My Manuscript", "bucket": "my-bucket", "key": "output/story.md"}'
+```
 """,
         version="0.2.0",
         lifespan=lifespan,
@@ -133,6 +141,11 @@ curl -X POST "http://localhost:8000/ingest" \\
         redoc_url="/redoc",
         openapi_url="/openapi.json",
     )
+    
+    # Add web UI if requested
+    if include_ui:
+        from opus_orchestrator.web_ui import create_web_ui
+        create_web_ui(app)
     
     return app
 
@@ -257,6 +270,84 @@ async def ingest(request: IngestRequest):
             files=content.metadata["files"],
         )
         
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# =============================================================================
+# UPLOAD ENDPOINTS
+# =============================================================================
+
+class UploadResponse(BaseModel):
+    """Response from file upload."""
+    filename: str
+    content: str
+    size: int
+    status: str
+
+
+class S3UploadRequest(BaseModel):
+    """Request to upload content to S3."""
+    content: str
+    bucket: str
+    key: str
+    endpoint_url: Optional[str] = None
+
+
+class S3UploadResponse(BaseModel):
+    """Response from S3 upload."""
+    bucket: str
+    key: str
+    url: str
+    status: str
+
+
+@app.post("/upload", response_model=UploadResponse, tags=["upload"])
+async def upload_file(file: UploadFile = File(...)):
+    """Upload a file for processing."""
+    try:
+        content = await file.read()
+        text_content = content.decode("utf-8")
+        
+        return UploadResponse(
+            filename=file.filename,
+            content=text_content,
+            size=len(content),
+            status="success",
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/upload/s3", response_model=S3UploadResponse, tags=["upload"])
+async def upload_to_s3(request: S3UploadRequest):
+    """Upload content to S3-compatible storage."""
+    try:
+        from opus_orchestrator import S3Ingestor
+        
+        # Create S3 ingestor
+        s3 = S3Ingestor(endpoint_url=request.endpoint_url)
+        
+        # Upload using boto3 directly
+        s3.s3_client.put_object(
+            Bucket=request.bucket,
+            Key=request.key,
+            Body=request.content.encode("utf-8"),
+            ContentType="text/markdown",
+        )
+        
+        # Build URL
+        if request.endpoint_url:
+            url = f"{request.endpoint_url}/{request.bucket}/{request.key}"
+        else:
+            url = f"s3://{request.bucket}/{request.key}"
+        
+        return S3UploadResponse(
+            bucket=request.bucket,
+            key=request.key,
+            url=url,
+            status="success",
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
