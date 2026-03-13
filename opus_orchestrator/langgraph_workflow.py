@@ -25,7 +25,7 @@ from langgraph.graph import StateGraph, END
 from langgraph.checkpoint.memory import MemorySaver
 
 from opus_orchestrator.frameworks import get_framework_prompt, StoryFramework
-from opus_orchestrator.utils.llm_sync import LLMClient
+from opus_orchestrator.utils.llm import LLMClient
 from opus_orchestrator.autogen_critique import create_critique_crew
 
 
