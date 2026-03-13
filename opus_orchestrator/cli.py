@@ -150,7 +150,7 @@ Examples:
     )
     
     # -------------------------------------------------------------------------
-    # INGEST COMMAND
+    # INGEST COMMAND (GitHub)
     # -------------------------------------------------------------------------
     ingest_parser = subparsers.add_parser(
         "ingest",
@@ -176,6 +176,43 @@ Examples:
         "--preview",
         action="store_true",
         help="Show preview of ingested content",
+    )
+    
+    # -------------------------------------------------------------------------
+    # INGEST-S3 COMMAND
+    # -------------------------------------------------------------------------
+    s3_parser = subparsers.add_parser(
+        "ingest-s3",
+        help="Ingest content from S3/MinIO",
+        description="Fetch and analyze content from S3-compatible storage",
+    )
+    s3_parser.add_argument(
+        "--bucket", "-b",
+        required=True,
+        help="S3 bucket name",
+    )
+    s3_parser.add_argument(
+        "--prefix", "-p",
+        default="",
+        help="Object key prefix",
+    )
+    s3_parser.add_argument(
+        "--endpoint", "-e",
+        help="S3 endpoint URL (for MinIO, DO Spaces, etc.)",
+    )
+    s3_parser.add_argument(
+        "--output", "-o",
+        help="Output file for ingested content",
+    )
+    s3_parser.add_argument(
+        "--preview",
+        action="store_true",
+        help="Show preview of ingested content",
+    )
+    s3_parser.add_argument(
+        "--list-objects",
+        action="store_true",
+        help="List objects instead of downloading",
     )
     
     # -------------------------------------------------------------------------
@@ -409,6 +446,54 @@ def run_ingest(args: argparse.Namespace) -> int:
     return 0
 
 
+def run_s3_ingest(args: argparse.Namespace) -> int:
+    """Ingest content from S3/MinIO."""
+    from opus_orchestrator import S3Ingestor
+    
+    print(f"\n🪣 Ingesting from S3: {args.bucket}/{args.prefix}\n")
+    
+    if args.endpoint:
+        print(f"   Endpoint: {args.endpoint}")
+    
+    ingestor = S3Ingestor(
+        endpoint_url=args.endpoint,
+        bucket=args.bucket,
+    )
+    
+    if args.list_objects:
+        # Just list objects
+        objects = ingestor.list_objects(bucket=args.bucket, prefix=args.prefix)
+        print(f"📦 Objects ({len(objects)}):")
+        for obj in objects[:20]:
+            print(f"   {obj['key']} ({obj['size']:,} bytes)")
+        if len(objects) > 20:
+            print(f"   ... and {len(objects) - 20} more")
+        return 0
+    
+    # Ingest content
+    result = ingestor.ingest_bucket(
+        bucket=args.bucket,
+        prefix=args.prefix,
+    )
+    
+    print(f"✅ Loaded {result['total_chars']:,} characters")
+    print(f"   Files: {result['file_count']}")
+    print(f"   File list: {', '.join(result['files'].keys())}\n")
+    
+    if args.preview:
+        print("📄 PREVIEW (first 2000 chars):")
+        print("-" * 40)
+        print(result["combined_text"][:2000])
+        print("-" * 40)
+    
+    if args.output:
+        with open(args.output, "w") as f:
+            f.write(result["combined_text"])
+        print(f"\n💾 Saved to: {args.output}")
+    
+    return 0
+
+
 def run_frameworks(args: argparse.Namespace) -> int:
     """List available frameworks."""
     from opus_orchestrator.frameworks import FRAMEWORKS
@@ -527,6 +612,7 @@ async def main_async(args: argparse.Namespace) -> int:
         "generate": run_generate,
         "serve": run_serve,
         "ingest": run_ingest,
+        "ingest-s3": run_s3_ingest,
         "frameworks": run_frameworks,
         "config": run_config,
         "docs": run_docs,
