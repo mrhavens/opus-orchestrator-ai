@@ -6,6 +6,7 @@ Key components:
 - content_infer: Infers purpose from existing blog/content
 - critique_criteria: Purpose-specific evaluation criteria
 - expanded_frameworks: 35+ expert-level frameworks
+- research_integration: Connect research agent to pipeline
 """
 
 from opus_orchestrator.nonfiction.classifier import (
@@ -41,6 +42,12 @@ from opus_orchestrator.nonfiction.expanded_frameworks import (
     suggest_framework_for_book,
     get_total_framework_count,
 )
+from opus_orchestrator.nonfiction.research_integration import (
+    ResearchIntegrator,
+    ResearchRequest,
+    ResearchResult,
+    get_research_config_for_purpose,
+)
 
 __all__ = [
     # Classifier
@@ -71,4 +78,9 @@ __all__ = [
     "get_frameworks_by_category",
     "suggest_framework_for_book",
     "get_total_framework_count",
+    # Research Integration
+    "ResearchIntegrator",
+    "ResearchRequest",
+    "ResearchResult",
+    "get_research_config_for_purpose",
 ]
