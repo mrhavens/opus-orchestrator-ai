@@ -19,13 +19,21 @@ class GitHubIngestor:
     
     def __init__(self, token: Optional[str] = None):
         self.token = token or os.environ.get("GITHUB_TOKEN")
-        if not self.token:
-            raise ValueError("GitHub token required. Set GITHUB_TOKEN or pass token.")
         
-        self.headers = {
-            "Authorization": f"token {self.token}",
-            "Accept": "application/vnd.github.v3+json",
-        }
+        # Token is optional - only required for private repos
+        # Public repos can be accessed without authentication
+        if self.token:
+            self.headers = {
+                "Authorization": f"token {self.token}",
+                "Accept": "application/vnd.github.v3+json",
+            }
+        else:
+            # No token - use unauthenticated requests (rate limited)
+            self.headers = {
+                "Accept": "application/vnd.github.v3+json",
+            }
+            print("⚠️  No GitHub token provided. Using unauthenticated requests (rate limited).")
+        
         self.base_url = "https://api.github.com"
     
     def get_contents(self, repo: str, path: str = "") -> list[dict]:
