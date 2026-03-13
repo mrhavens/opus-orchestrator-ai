@@ -10,6 +10,12 @@ from opus_orchestrator.agents.nonfiction.researcher import (
     NonfictionWriterAgent,
     ResearcherAgent,
 )
+from opus_orchestrator.agents.nonfiction.purpose_writers import (
+    get_writer_for_purpose,
+    select_writer_agent,
+    list_available_writers,
+    PURPOSE_WRITERS,
+)
 
 __all__ = [
     "ResearcherAgent",
@@ -17,4 +23,9 @@ __all__ = [
     "NonfictionWriterAgent",
     "FactCheckerAgent",
     "NonfictionEditorAgent",
+    # Purpose-specific writers
+    "get_writer_for_purpose",
+    "select_writer_agent",
+    "list_available_writers",
+    "PURPOSE_WRITERS",
 ]
