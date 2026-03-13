@@ -47,6 +47,20 @@ from opus_orchestrator.schemas import (
 from opus_orchestrator.state import OpusState
 from opus_orchestrator.utils.github_ingest import GitHubIngestor
 
+# Nonfiction taxonomy - Purpose × Structure matrix
+from opus_orchestrator.nonfiction import (
+    PurposeClassifier,
+    ReaderPurpose,
+)
+from opus_orchestrator.nonfiction_taxonomy import (
+    select_framework,
+    get_frameworks_for_purpose,
+    NONFICTION_FRAMEWORKS,
+    PURPOSE_STRUCTURE_MATRIX,
+    StructuralPattern,
+    NonfictionCategory,
+)
+
 
 class OpusOrchestrator:
     """Main orchestrator implementing multiple story frameworks."""
@@ -62,6 +76,9 @@ class OpusOrchestrator:
         target_word_count: int = 80000,
         framework: str = "snowflake",
         config: Optional[OpusConfig] = None,
+        # Nonfiction-specific options
+        purpose: Optional[str] = None,
+        category: Optional[str] = None,
     ):
         """Initialize the Opus Orchestrator with selectable framework.
         
@@ -97,6 +114,34 @@ class OpusOrchestrator:
         
         # Get framework info
         self.framework_info = FRAMEWORKS.get(self.framework, FRAMEWORKS[StoryFramework.SNOWFLAKE])
+
+        # ================================================================
+        # NONFICTION: Purpose Classification & Framework Selection
+        # ================================================================
+        self.purpose: Optional[ReaderPurpose] = None
+        self.nonfiction_framework: Optional[dict] = None
+        self.framework_stages: list[str] = []
+        
+        if self.book_type == BookType.NONFICTION:
+            # Classify purpose if not explicitly provided
+            if purpose:
+                try:
+                    self.purpose = ReaderPurpose(purpose.lower())
+                except ValueError:
+                    # Default will be determined by classifier
+                    self.purpose = None
+            
+            # If purpose not yet determined, classify from intent
+            if not self.purpose:
+                self._classify_purpose_from_intent(
+                    concept=intended_outcome,  # Using outcome as proxy for concept
+                    target_audience=target_audience,
+                )
+            
+            # Select appropriate framework based on purpose
+            self._select_nonfiction_framework(category)
+        
+        # ================================================================
 
         self.intent = BookIntent(
             book_type=self.book_type,
@@ -138,6 +183,137 @@ class OpusOrchestrator:
                 "fact_checker": FactCheckerAgent(self.config.agent),
                 "editor": NonfictionEditorAgent(self.config.agent),
             }
+
+    # =========================================================================
+    # NONFICTION: Purpose Classification & Framework Selection
+    # =========================================================================
+    
+    def _classify_purpose_from_intent(
+        self,
+        concept: str,
+        target_audience: str,
+    ) -> None:
+        """Classify purpose from book intent using keyword classifier.
+        
+        Args:
+            concept: The book concept/title
+            target_audience: Target audience description
+        """
+        classifier = PurposeClassifier()
+        result = classifier._keyword_classify(
+            concept=concept or "",
+            target_audience=target_audience,
+            intended_outcome=self.intent.intended_outcome or "",
+        )
+        
+        self.purpose = result.purpose
+        print(f"[NONFICTION] Purpose classified: {self.purpose.value} (confidence: {result.confidence:.2f})")
+        print(f"[NONFICTION] Reasoning: {result.reasoning}")
+    
+    def _select_nonfiction_framework(self, category: Optional[str] = None) -> None:
+        """Select the best framework based on purpose and category.
+        
+        Args:
+            category: Optional nonfiction category (business, self_help, etc.)
+        """
+        if not self.purpose:
+            # Default to UNDERSTAND if not classified
+            self.purpose = ReaderPurpose.UNDERSTAND
+        
+        # Map category string to NonfictionCategory enum
+        category_enum = None
+        if category:
+            try:
+                category_enum = NonfictionCategory(category.lower())
+            except ValueError:
+                pass
+        
+        # Select framework using taxonomy
+        framework = select_framework(
+            purpose=self.purpose,
+            category=category_enum,
+            user_preferred_framework=None,
+        )
+        
+        self.nonfiction_framework = framework
+        self.framework_stages = framework.get("stages", [])
+        
+        print(f"[NONFICTION] Framework selected: {framework.get('name', 'Unknown')}")
+        print(f"[NONFICTION] Structure: {framework.get('structure', 'N/A')}")
+        print(f"[NONFICTION] Stages ({len(self.framework_stages)}):")
+        for i, stage in enumerate(self.framework_stages[:5], 1):
+            print(f"  {i}. {stage}")
+        if len(self.framework_stages) > 5:
+            print(f"  ... and {len(self.framework_stages) - 5} more")
+    
+    def get_framework_context(self) -> dict[str, Any]:
+        """Get the framework context for passing to agents.
+        
+        Returns:
+            Dict with framework name, purpose, stages, and prompt template
+        """
+        if self.book_type == BookType.NONFICTION and self.nonfiction_framework:
+            return {
+                "framework_name": self.nonfiction_framework.get("name", ""),
+                "framework_purpose": self.purpose.value if self.purpose else "",
+                "structure": self.nonfiction_framework.get("structure", ""),
+                "stages": self.framework_stages,
+                "prompt_template": self.nonfiction_framework.get("prompt_template", ""),
+                "tone_guidance": self.nonfiction_framework.get("tone_guidance", ""),
+            }
+        else:
+            # Return fiction framework context
+            return {
+                "framework_name": self.framework.value,
+                "framework_purpose": "entertainment",
+                "structure": "narrative",
+                "stages": [],
+                "prompt_template": "",
+                "tone_guidance": "",
+            }
+    
+    def generate_stage_outline(
+        self,
+        stage_name: str,
+        stage_index: int,
+        context: dict[str, Any],
+    ) -> str:
+        """Generate a chapter/section outline for a given stage.
+        
+        Args:
+            stage_name: Name of the framework stage
+            stage_index: Index of the stage
+            context: Additional context (book concept, etc.)
+            
+        Returns:
+            Generated outline for the stage
+        """
+        if not self.nonfiction_framework:
+            return f"Chapter {stage_index + 1}: {stage_name}"
+        
+        # Build prompt for this specific stage
+        prompt = f"""Generate a detailed outline for a book section.
+
+Framework Stage: {stage_name}
+Stage Number: {stage_index + 1} of {len(self.framework_stages)}
+
+Book Context:
+- Concept: {context.get('concept', 'N/A')}
+- Purpose: {self.purpose.value if self.purpose else 'N/A'}
+- Target Audience: {self.intent.target_audience}
+
+Framework: {self.nonfiction_framework.get('name', 'N/A')}
+Structure: {self.nonfiction_framework.get('structure', 'N/A')}
+
+Generate a detailed outline with:
+1. Section title
+2. Key points to cover (3-5)
+3. Word count target
+4. Tone guidance for this section
+"""
+        return prompt
+    
+    # =========================================================================
 
     async def ingest(self, content: Optional[RawContent] = None) -> OpusState:
         """Ingest raw content from repository."""
