@@ -74,19 +74,29 @@ class GitHubIngestor:
         repo: str,
         extensions: Optional[list[str]] = None,
         exclude_dirs: Optional[list[str]] = None,
+        include_all: bool = True,
     ) -> dict[str, str]:
-        """Get all files from a repository.
+        """Get all files from a repository - INCLUDING SOURCE CODE.
+        
+        The AI witnesses EVERYTHING and transforms it into documentation.
+        Don't filter what the AI can see - let it decide what's relevant.
         
         Args:
             repo: "owner/repo" format
-            extensions: File extensions to include (e.g., ['.md', '.txt'])
-            exclude_dirs: Directories to exclude
+            extensions: File extensions to include (None = ALL files!)
+            exclude_dirs: Directories to exclude (build artifacts, etc.)
+            include_all: If True, include ALL files (default True!)
             
         Returns:
             Dictionary mapping file paths to content
         """
-        extensions = extensions or [".md", ".txt", ".text", ".notes", ".draft"]
-        exclude_dirs = exclude_dirs or [".git", "node_modules", "__pycache__", ".github"]
+        # Default: include ALL files - the AI will witness everything!
+        if include_all:
+            extensions = None  # No extension filter
+            exclude_dirs = exclude_dirs or [".git", "node_modules", "__pycache__", ".github", "dist", "build", "*.egg-info"]
+        else:
+            extensions = extensions or [".md", ".txt", ".text", ".notes", ".draft", ".rst"]
+            exclude_dirs = exclude_dirs or [".git", "node_modules", "__pycache__", ".github"]
         
         files = {}
         
@@ -97,7 +107,7 @@ class GitHubIngestor:
                 # Single file
                 if contents.get("type") == "file":
                     content_path = contents["path"]
-                    if self._should_include(content_path, extensions, exclude_dirs):
+                    if self._should_include(content_path, extensions, exclude_dirs, include_all):
                         files[content_path] = self.get_file_content(repo, content_path)
                 return
             
@@ -110,7 +120,7 @@ class GitHubIngestor:
                     if not any(excl in item_path for excl in exclude_dirs):
                         walk_directory(item_path)
                 elif item_type == "file":
-                    if self._should_include(item_path, extensions, exclude_dirs):
+                    if self._should_include(item_path, extensions, exclude_dirs, include_all):
                         files[item_path] = self.get_file_content(repo, item_path)
         
         walk_directory()
@@ -119,17 +129,32 @@ class GitHubIngestor:
     def _should_include(
         self,
         path: str,
-        extensions: list[str],
+        extensions: Optional[list[str]],
         exclude_dirs: list[str],
+        include_all: bool = True,
     ) -> bool:
-        """Check if file should be included."""
+        """Check if file should be included.
+        
+        Args:
+            path: File path to check
+            extensions: List of extensions (None if include_all=True)
+            exclude_dirs: Directories to exclude
+            include_all: Include ALL files (ignore extensions)
+        """
         # Exclude directories
         for excl in exclude_dirs:
             if excl in path:
                 return False
         
-        # Check extension
-        return any(path.endswith(ext) for ext in extensions)
+        # If include_all, include everything
+        if include_all:
+            return True
+        
+        # Otherwise check extensions
+        if extensions:
+            return any(path.endswith(ext) for ext in extensions)
+        
+        return True
     
     def extract_text_from_files(self, files: dict[str, str]) -> str:
         """Combine all file contents into a single text blob.

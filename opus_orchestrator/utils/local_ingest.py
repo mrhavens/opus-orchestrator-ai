@@ -1,6 +1,7 @@
 """Local file ingestion for Opus Orchestrator.
 
-Fetches content from local files and directories.
+Fetches content from local files and directories - INCLUDING SOURCE CODE.
+The AI witnesses ALL data and transforms it into documentation.
 """
 
 import os
@@ -13,10 +14,12 @@ class LocalIngestor:
     """Fetch and parse content from local files and directories.
     
     Supports:
-    - Individual files
+    - ALL file types (including source code!)
     - Directories (recursive)
     - File pattern matching
-    - Multiple formats (txt, md, markdown, etc.)
+    
+    Philosophy: The AI witnesses everything and transforms it.
+    Don't filter what the AI can see - let it decide what's relevant.
     """
     
     def __init__(
@@ -33,10 +36,8 @@ class LocalIngestor:
         self.root_path = Path(root_path) if root_path else Path.cwd()
         self.encoding = encoding
         
-        # Default file extensions to include
-        self.default_extensions = [".txt", ".md", ".markdown", ".notes", ".draft", ".rst", ".org"]
-        
-        # Files/dirs to exclude
+        # INCLUDE ALL FILES - let the AI witness everything!
+        # Only exclude build artifacts and version control
         self.exclude_patterns = [
             ".git",
             ".svn",
@@ -46,10 +47,20 @@ class LocalIngestor:
             "venv",
             ".env",
             "*.pyc",
+            "*.so",
+            "*.o",
+            "*.a",
+            "*.dylib",
             ".DS_Store",
             "*.swp",
             "*.tmp",
             ".cache",
+            "dist",
+            "build",
+            "*.egg-info",
+            ".pytest_cache",
+            ".mypy_cache",
+            ".tox",
         ]
 
     def is_excluded(self, path: Path) -> bool:
@@ -75,14 +86,18 @@ class LocalIngestor:
         extensions: Optional[list[str]] = None,
         recursive: bool = True,
         max_files: int = 1000,
+        include_all: bool = True,
     ) -> dict[Path, str]:
-        """Get all text files from a path.
+        """Get all files from a path - INCLUDING SOURCE CODE.
+        
+        The AI witnesses everything and transforms it into documentation.
         
         Args:
             path: File or directory path
-            extensions: File extensions to include (default: common text formats)
+            extensions: File extensions to include (None = ALL files!)
             recursive: Recursively scan directories
             max_files: Maximum number of files to read
+            include_all: If True, include ALL files (default True!)
             
         Returns:
             Dict mapping file paths to content
@@ -92,14 +107,19 @@ class LocalIngestor:
         if not path.exists():
             raise FileNotFoundError(f"Path does not exist: {path}")
         
-        extensions = extensions or self.default_extensions
-        extensions = [ext.lower() for ext in extensions]
+        # Default: include ALL files (source code, configs, everything!)
+        # The AI will witness and transform everything
+        if include_all:
+            extensions = None  # Include everything
+        else:
+            extensions = extensions or self.default_extensions
+            extensions = [ext.lower() for ext in extensions]
         
         results = {}
         
         if path.is_file():
             # Single file
-            if self._has_valid_extension(path, extensions):
+            if include_all or self._has_valid_extension(path, extensions or []):
                 results[path] = self._read_file(path)
         else:
             # Directory
@@ -107,7 +127,8 @@ class LocalIngestor:
                 path, 
                 extensions, 
                 recursive, 
-                max_files - len(results)
+                max_files - len(results),
+                include_all=include_all,
             )
             
             for f in files:
@@ -126,9 +147,10 @@ class LocalIngestor:
     def _scan_directory(
         self,
         directory: Path,
-        extensions: list[str],
+        extensions: Optional[list[str]],
         recursive: bool,
         max_files: int,
+        include_all: bool = True,
     ) -> list[Path]:
         """Scan directory for matching files."""
         files = []
@@ -145,7 +167,8 @@ class LocalIngestor:
                         if self.is_excluded(filepath):
                             continue
                         
-                        if self._has_valid_extension(filepath, extensions):
+                        # Include ALL files (including source code!)
+                        if include_all or self._has_valid_extension(filepath, extensions or []):
                             files.append(filepath)
                             
                             if len(files) >= max_files:
@@ -154,7 +177,7 @@ class LocalIngestor:
                 # Non-recursive
                 for item in directory.iterdir():
                     if item.is_file() and not self.is_excluded(item):
-                        if self._has_valid_extension(item, extensions):
+                        if include_all or self._has_valid_extension(item, extensions or []):
                             files.append(item)
                             
                             if len(files) >= max_files:
