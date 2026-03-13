@@ -1,161 +1,339 @@
 # Opus Orchestrator AI
 
-> Full-flow AI book generation orchestrator using LangGraph, CrewAI, AutoGen, and PydanticAI. Integrates Fiction Fortress and Nonfiction Fortress for professional manuscript production.
+> Full-flow AI book generation system using **LangGraph**, **CrewAI**, **AutoGen**, and **PydanticAI**
 
-## Overview
+A comprehensive, production-ready system for generating publication-ready manuscripts from raw content.
 
-Opus Orchestrator AI transforms raw content (notes, outlines, stream-of-consciousness, essays, logs) into fully edited, publication-ready manuscripts. It combines:
+---
 
-- **LangGraph** — Workflow orchestration and state management
-- **CrewAI** — Role-based agent crews
-- **AutoGen** — Complex multi-agent negotiations
-- **PydanticAI** — Structured output validation
-- **Fiction Fortress** — Complete fiction writing methodology
-- **Nonfiction Fortress** — Complete non-fiction writing methodology
-
-## Architecture
-
-```
-[GitHub Repo Input]
-        │
-        ▼
-┌───────────────────┐
-│   INGESTOR AGENT  │ ──► Extracts raw content from repo
-└────────┬──────────┘
-         │
-         ▼
-┌───────────────────┐
-│ INTENT ANALYZER   │ ──► Analyzes goals, audience, intended outcome
-└────────┬──────────┘
-         │
-         ▼
-┌───────────────────┐
-│   BLUEPRINT       │ ──► Generates detailed book blueprint
-└────────┬──────────┘
-         │
-         ▼
-    ┌────┴────┐
-    │ ITERATE │
-    └────┬────┘
-         │
-    ┌────▼─────────────┐
-    │ CREW EXECUTION   │ ──► Runs agent crews per chapter
-    │ • Writer         │
-    │ • Critics (3+)   │
-    │ • Editor         │
-    │ • Proofreader    │
-    └────┬─────────────┘
-         │
-    ┌────▼─────────────┐
-    │ REVIEW & REVISE  │ ──► Internal critic circle
-    └────┬─────────────┘
-         │
-         └─────────────┬────► [Loop back if needed]
-                        │
-                        ▼
-              ┌─────────────────┐
-              │ COMPILED .MD    │
-              │ MANUSCRIPT      │
-              └─────────────────┘
-```
-
-## Installation
+## ⚡ Quick Start
 
 ```bash
-git clone https://github.com/mrhavens/opus-orchestrator-ai.git
-cd opus-orchestrator-ai
-pip install -e .
+# Install
+pip install opus-orchestrator-ai
+
+# Generate a manuscript (local mode)
+opus generate --concept "A robot dreams of electric sheep" --words 5000
+
+# Or use API server mode
+opus serve --port 8000
+opus --api-url http://localhost:8000 generate --concept "Your idea"
 ```
 
-## Quick Start
+---
+
+## 🏗️ Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                      OPUS ORCHESTRATOR AI                          │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│  ┌─────────────┐    ┌─────────────┐    ┌─────────────────────┐  │
+│  │   INGEST   │───►│   LANGGRAPH │───►│    OUTPUT           │  │
+│  │   LAYER    │    │   WORKFLOW  │    │    (Manuscript)     │  │
+│  └─────────────┘    └─────────────┘    └─────────────────────┘  │
+│         │                  │                                       │
+│    ┌────┴────┐       ┌────┴────┐                                 │
+│    ▼         ▼       ▼         ▼                                  │
+│ GitHub    S3/MinIO  CrewAI   AutoGen                              │
+│ Ingestor  Ingestor   Agents   Critique                             │
+│                                                                     │
+│  ┌─────────────────────────────────────────────────────────────┐  │
+│  │                   VALIDATION LAYER                          │  │
+│  │                    PydanticAI                               │  │
+│  └─────────────────────────────────────────────────────────────┘  │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 📦 Features
+
+### Core Generation
+
+| Feature | Description | Status |
+|---------|-------------|--------|
+| **Snowflake Method** | 7-stage fractal expansion from sentence to novel | ✅ |
+| **Story Frameworks** | 7 frameworks: Snowflake, 3-Act, Save the Cat, Hero's Journey, Story Circle, 7-Point, Fichtean | ✅ |
+| **LangGraph Workflow** | State machine with streaming progress | ✅ |
+| **AutoGen Critique** | Multi-agent debate (LiteraryCritic, GenreExpert, StoryEditor) | ✅ |
+| **PydanticAI Validation** | Structured output validation with type-safe schemas | ✅ |
+
+### Agent Systems
+
+| Agent | Role | Status |
+|-------|------|--------|
+| **ArchitectAgent** | Story structure & blueprint | ✅ |
+| **WorldsmithAgent** | World-building & setting | ✅ |
+| **CharacterLeadAgent** | Character development | ✅ |
+| **VoiceAgent** | Narrative voice & tone | ✅ |
+| **EditorAgent** | Editorial review | ✅ |
+| **ResearcherAgent** (Nonfiction) | Fact-finding | ✅ |
+| **AnalystAgent** (Nonfiction) | Argument analysis | ✅ |
+
+### Ingestion Sources
+
+| Source | Description | Status |
+|--------|-------------|--------|
+| **GitHub** | Fetch from public/private repos | ✅ |
+| **S3/MinIO** | S3-compatible object storage | ✅ |
+| **Local Files** | Direct file input | ✅ |
+
+### Deployment
+
+| Mode | Description | Status |
+|------|-------------|--------|
+| **CLI** | Standalone command-line tool | ✅ |
+| **API Server** | FastAPI REST server | ✅ |
+| **API Client** | Client mode for remote servers | ✅ |
+| **Python Module** | Import as library | ✅ |
+
+---
+
+## 🚀 Usage
+
+### CLI Commands
+
+```bash
+# Generate manuscript (local)
+opus generate --concept "Your story idea" --framework snowflake --words 5000
+
+# Generate from GitHub
+opus generate --repo owner/repo --framework hero-journey --words 80000
+
+# Generate from S3/MinIO
+opus ingest-s3 --bucket my-bucket --prefix notes/ --output content.txt
+
+# Start API server
+opus serve --port 8000
+
+# Use as API client
+opus --api-url http://localhost:8000 generate --concept "..."
+
+# List frameworks
+opus frameworks
+
+# Show config
+opus config
+
+# Show docs
+opus docs
+```
+
+### Python API
 
 ```python
-from opus_orchestrator import OpusOrchestrator
+from opus_orchestrator import run_opus
 
-orchestrator = OpusOrchestrator(
-    repo_url="https://github.com/user/my-book-ideas",
-    book_type="fiction",  # or "nonfiction"
+# Simple generation
+result = await run_opus(
+    seed_concept="A robot dreams of love",
+    framework="snowflake",
     genre="science-fiction",
-    target_audience="adult sci-fi readers",
-    intended_outcome="complete novel, ~80k words"
+    target_word_count=5000,
 )
 
-# Run the full pipeline
-manuscript = await orchestrator.run()
-print(f"Generated: {manuscript.word_count} words")
+manuscript = result["manuscript"]
 ```
 
-## Configuration
+### Using CrewAI
 
-See `config.example.yaml` for full configuration options.
+```python
+from opus_orchestrator.crews import create_fiction_crew
 
-## Project Structure
+crew = create_fiction_crew(
+    genre="science-fiction",
+    tone="literary",
+    target_word_count=2000,
+)
+
+story = crew.write_full_story(
+    story_outline="Your outline...",
+    character_sheets="...",
+    style_guide="Tone: literary",
+    num_chapters=5,
+)
+```
+
+### Using PydanticAI Validation
+
+```python
+from opus_orchestrator import create_style_guide_agent
+
+agent = create_style_guide_agent()
+result = agent.run_sync("Create a style guide for a literary novel")
+
+# Result is a validated StyleGuide object
+print(result.tone)        # "Contemplative and introspective"
+print(result.pacing)      # "Deliberate with moments of acceleration"
+```
+
+### API Server
+
+```python
+from opus_orchestrator.server import app, run_server
+
+# Run server
+await run_server(host="0.0.0.0", port=8000)
+
+# Or with uvicorn directly
+# uvicorn opus_orchestrator.server:app --port 8000
+```
+
+### API Client
+
+```python
+from opus_orchestrator.cli import OpusAPIClient
+
+client = OpusAPIClient("http://localhost:8000")
+
+# Health check
+health = client.health()
+
+# Generate
+result = client.generate(
+    concept="A robot dreams",
+    framework="snowflake",
+    target_word_count=5000,
+)
+
+print(result["manuscript"])
+```
+
+---
+
+## ⚙️ Configuration
+
+### Environment Variables
+
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `OPENAI_API_KEY` | OpenAI API key | Yes (or MINIMAX_API_KEY) |
+| `MINIMAX_API_KEY` | MiniMax API key | No |
+| `GITHUB_TOKEN` | GitHub token for private repos | No |
+| `AWS_ACCESS_KEY_ID` | AWS access key for S3 | No |
+| `AWS_SECRET_ACCESS_KEY` | AWS secret key for S3 | No |
+| `S3_ENDPOINT_URL` | Custom S3 endpoint (MinIO, DO Spaces) | No |
+
+### Configuration File
+
+```yaml
+# config.yaml
+agent:
+  provider: openai
+  model: gpt-4o
+  temperature: 0.7
+  max_tokens: null
+
+iteration:
+  min_critic_rounds: 2
+  max_critic_rounds: 5
+  approval_threshold: 0.8
+
+output:
+  format: markdown
+  include_toc: true
+  output_dir: ./output
+```
+
+---
+
+## 📚 Story Frameworks
+
+### Implemented Frameworks
+
+| Framework | Type | Stages/Beats |
+|-----------|------|---------------|
+| **Snowflake Method** | Fractal | 7 stages |
+| **Three-Act Structure** | Linear | 7 beats |
+| **Save the Cat** | Screenplay | 15 beats |
+| **Hero's Journey** | Mythic | 12 stages |
+| **Story Circle** | Circular | 8 beats |
+| **7-Point Plot** | Structural | 7 beats |
+| **Fichtean Curve** | Episodic | 7 beats |
+
+---
+
+## 🧩 Project Structure
 
 ```
 opus_orchestrator/
 ├── __init__.py           # Main exports
-├── config.py             # Configuration management
-├── state.py              # LangGraph state definitions
-├── graph.py              # Main workflow graph
-├── agents/
-│   ├── __init__.py
-│   ├── base.py           # Base agent class
-│   ├── fiction/          # Fiction Fortress agents
+├── __main__.py           # CLI entry point
+├── cli.py                # CLI implementation
+├── server.py             # FastAPI server
+├── orchestrator.py       # Main orchestrator
+├── langgraph_workflow.py # LangGraph pipeline
+├── autogen_critique.py  # AutoGen critique crew
+├── pydanticai_agent.py  # PydanticAI agents
+├── config.py             # Configuration
+├── frameworks.py          # Story frameworks
+│
+├── agents/               # Agent implementations
+│   ├── fiction/          # Fiction agents
 │   │   ├── architect.py
 │   │   ├── worldsmith.py
 │   │   ├── character_lead.py
 │   │   ├── voice.py
 │   │   └── editor.py
-│   └── nonfiction/       # Nonfiction Fortress agents
+│   └── nonfiction/      # Nonfiction agents
 │       ├── researcher.py
 │       ├── analyst.py
 │       ├── writer.py
 │       ├── fact_checker.py
 │       └── editor.py
-├── crews/
-│   ├── __init__.py
-│   ├── fiction_crew.py   # Fiction writing crew
+│
+├── crews/               # CrewAI crews
+│   ├── base_crew.py     # Base crew class
+│   ├── fiction_crew.py  # Fiction crew
 │   └── nonfiction_crew.py
-├── schemas/
-│   ├── __init__.py
-│   ├── book.py           # Book-level schemas
-│   ├── chapter.py        # Chapter schemas
-│   └── critique.py       # Critique schemas
-└── utils/
-    ├── __init__.py
-    ├── github.py         # GitHub ingestion
-    └── output.py        # Output generation
+│
+├── schemas/              # Pydantic schemas
+│   └── book.py
+│
+└── utils/               # Utilities
+    ├── github_ingest.py # GitHub ingestion
+    ├── s3_ingest.py    # S3/MinIO ingestion
+    ├── llm.py          # LLM client
+    └── docs.py         # Documentation generator
 ```
 
-## Development
+---
 
-### Running Tests
+## 🧪 Testing
 
 ```bash
+# Run tests
 pytest tests/
-```
 
-### Code Style
+# Run with coverage
+pytest --cov=opus_orchestrator tests/
 
-```bash
+# Lint
 ruff check .
+
+# Format
 ruff format .
 ```
 
-## Dependencies
+---
 
-- langgraph
-- crewai
-- autogen
-- pydantic-ai
-- pydantic
-- httpx
-- pygithub
-- pyyaml
+## 📄 License
 
-## License
+MIT License
 
-MIT
+---
+
+## 🤝 Built With
+
+- **LangGraph** - Workflow orchestration
+- **CrewAI** - Multi-agent systems
+- **AutoGen** - Complex agent conversations
+- **PydanticAI** - Structured output validation
+- **FastAPI** - REST API server
+- **OpenAI** - LLM provider
 
 ---
 
