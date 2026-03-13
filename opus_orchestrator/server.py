@@ -7,7 +7,7 @@ import os
 from typing import Any, Optional
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, HTTPException, BackgroundTasks
+from fastapi import FastAPI, HTTPException, BackgroundTasks, UploadFile, File
 from fastapi.responses import JSONResponse, RedirectResponse
 from pydantic import BaseModel, Field
 from dotenv import load_dotenv

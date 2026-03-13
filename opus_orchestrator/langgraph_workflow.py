@@ -198,7 +198,7 @@ class OpusGraph:
         workflow.add_edge("write_chapters", "complete")
         workflow.add_edge("complete", END)
         
-        checkpointer = None  # Disable for simpler debugging
+        checkpointer = MemorySaver()  # Enable for state persistence
         return workflow.compile(checkpointer=checkpointer)
     
     # ============== NODES (Return DICT, not mutated state) ==============
@@ -635,19 +635,32 @@ Write ~{plan.word_count_target} words.
                         print(f"[STREAM] Reconstructed state from dict")
         except Exception as e:
             print(f"[RUN] Stream error: {e}")
+            import traceback
+            traceback.print_exc()
+            # Don't give up - try to recover partial state
         
-        # SAFETY FALLBACK: Pull from checkpoint/snapshot
+        # Enable checkpointing for recovery
         print("[RUN] Checking final state...")
         if final_state is None:
-            print("[FALLBACK] No state from stream, trying snapshot...")
-            final_state = initial_state
+            print("[WARNING] No state from stream, attempting recovery...")
+            # Try to recover from any partial state that was accumulated
+            # In a full implementation, we'd load from checkpoint here
+            # For now, raise a clear error instead of silently failing
+            raise RuntimeError(
+                f"Workflow failed to complete. "
+                f"Last known stage: {getattr(final_state, 'stage', 'unknown') if final_state else 'initial'}. "
+                f"Error: {e}"
+            )
         
         # Verify we have manuscript
         if not final_state.manuscript:
-            print("[FALLBACK] No manuscript in state!")
-            # Last resort: return what we have
-        else:
-            print(f"[RESULT] SUCCESS! {len(final_state.chapters)} chapters, {final_state.total_word_count} words")
+            print("[WARNING] No manuscript generated!")
+            # Return partial state for debugging
+            if final_state.prewriting.one_sentence:
+                print(f"[PARTIAL] Generated: {final_state.prewriting.one_sentence[:100]}...")
+            raise RuntimeError("Workflow completed but no manuscript was generated.")
+        
+        print(f"[RESULT] SUCCESS! {len(final_state.chapters)} chapters, {final_state.total_word_count} words")
         
         return final_state
 
