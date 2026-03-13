@@ -108,7 +108,6 @@ class OpusAPIClient:
             "chapters": chapters,
             "tone": tone,
             "use_crewai": use_crewai,
-            "use_autogen": use_autogen,
         }
         
         if concept:

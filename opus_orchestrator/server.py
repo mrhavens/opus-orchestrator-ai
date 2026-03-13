@@ -183,6 +183,7 @@ async def list_frameworks():
 @app.post("/generate", response_model=GenerateResponse, tags=["generate"])
 async def generate(request: GenerateRequest, background_tasks: BackgroundTasks):
     """Generate a manuscript from concept or GitHub repo."""
+    import traceback
     try:
         # Prepare seed concept
         seed_concept = request.concept
@@ -207,10 +208,21 @@ async def generate(request: GenerateRequest, background_tasks: BackgroundTasks):
             framework=request.framework,
             genre=request.genre,
             target_word_count=request.target_word_count,
-            use_autogen=request.use_autogen,
         )
         
-        manuscript = result.get("manuscript", str(result))
+        # Extract manuscript - handle both dict and string results
+        if isinstance(result, dict):
+            manuscript = result.get("manuscript", "")
+            if not manuscript:
+                # Try to get chapters content
+                chapters = result.get("chapters", [])
+                if chapters:
+                    manuscript = "\n\n---\n\n".join(str(c) for c in chapters)
+                else:
+                    manuscript = str(result)
+        else:
+            manuscript = str(result)
+        
         word_count = len(manuscript.split())
         
         return GenerateResponse(
@@ -223,6 +235,8 @@ async def generate(request: GenerateRequest, background_tasks: BackgroundTasks):
         )
         
     except Exception as e:
+        import logging
+        logging.error(f"Generate error: {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
