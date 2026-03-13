@@ -308,6 +308,17 @@ Examples:
         help="Disable AutoGen critique",
     )
     gen_parser.add_argument(
+        "--thread-id",
+        type=str,
+        default=None,
+        help="Thread ID for checkpointing/resume (if resuming, use same ID)",
+    )
+    gen_parser.add_argument(
+        "--resume",
+        action="store_true",
+        help="Resume from last checkpoint using --thread-id",
+    )
+    gen_parser.add_argument(
         "--verbose", "-V",
         action="store_true",
         help="Enable verbose output",
@@ -706,11 +717,22 @@ async def run_generate(args: argparse.Namespace) -> int:
                 )
         else:
             # Use LangGraph pipeline
+            # Generate thread_id if not provided
+            import uuid
+            thread_id = args.thread_id or str(uuid.uuid4())
+            
+            print(f"🧵 Thread ID: {thread_id}")
+            if args.resume:
+                print(f"   ↪️  Resuming from checkpoint\n")
+            else:
+                print()
+            
             result = await run_opus(
                 seed_concept=seed_concept,
                 framework=args.framework,
                 genre=args.genre,
                 target_word_count=args.words,
+                thread_id=thread_id,
             )
             
             manuscript = result.get("manuscript", str(result))
