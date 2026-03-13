@@ -93,6 +93,49 @@ class BaseAgent(ABC, Generic[T]):
             temperature=temp,
             max_tokens=self.config.max_tokens,
         )
+    def validate_output(self, output: Any, schema: type[T]) -> tuple[bool, Optional[T], Optional[str]]:
+        """Validate agent output against a Pydantic schema.
+        
+        Args:
+            output: Raw output from the agent (usually str)
+            schema: Pydantic model to validate against
+            
+        Returns:
+            Tuple of (is_valid, validated_output, error_message)
+        """
+        if schema is None:
+            # No schema to validate against
+            return True, None, None
+        
+        # Try to parse the output as the schema
+        try:
+            # If output is a string, try to parse as JSON first
+            if isinstance(output, str):
+                import json
+                # Try to extract JSON from the output
+                try:
+                    # Look for JSON block
+                    if "```json" in output:
+                        json_str = output.split("```json")[1].split("```")[0]
+                    elif "```" in output:
+                        json_str = output.split("```")[1].split("```")[0]
+                    else:
+                        json_str = output
+                    data = json.loads(json_str)
+                except (json.JSONDecodeError, IndexError):
+                    # Not JSON, return as-is
+                    return True, None, None
+            else:
+                data = output
+            
+            # Validate against schema
+            validated = schema(**data)
+            return True, validated, None
+            
+        except Exception as e:
+            return False, None, f"Validation failed: {str(e)}"
+
+
 
     def build_system_prompt(self, context: dict[str, Any]) -> str:
         """Build the full system prompt with context.
