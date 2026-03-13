@@ -113,7 +113,7 @@ class LLMClient:
         if max_tokens:
             payload["max_tokens"] = max_tokens
         
-        response = await self.client.post(
+        response = await self._async_client.post(
             f"{self.base_url}/text/chatcompletion_v2",
             headers=headers,
             json=payload,
@@ -157,7 +157,7 @@ class LLMClient:
         if max_tokens:
             payload["max_tokens"] = max_tokens
         
-        response = await self.client.post(
+        response = await self._async_client.post(
             f"{self.base_url}/chat/completions",
             headers=headers,
             json=payload,
