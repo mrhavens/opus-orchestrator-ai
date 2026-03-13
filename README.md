@@ -90,6 +90,14 @@ opus --api-url http://localhost:8000 generate --concept "Your idea"
 | **API Client** | Client mode for remote servers | ✅ |
 | **Python Module** | Import as library | ✅ |
 
+### Output Options
+
+| Destination | CLI Flag | Description |
+|------------|----------|-------------|
+| **Local File** | `--output FILE` | Save to local filesystem |
+| **S3/MinIO** | `--save-s3 BUCKET/PATH` | Upload to S3-compatible storage |
+| **GitHub** | `--save-repo OWNER/REPO` | Commit to GitHub repository |
+
 ---
 
 ## 🚀 Usage
@@ -97,13 +105,27 @@ opus --api-url http://localhost:8000 generate --concept "Your idea"
 ### CLI Commands
 
 ```bash
-# Generate manuscript (local)
+# Generate manuscript (local, save to file)
 opus generate --concept "Your story idea" --framework snowflake --words 5000
 
 # Generate from GitHub
 opus generate --repo owner/repo --framework hero-journey --words 80000
 
-# Generate from S3/MinIO
+# Generate and save to S3/MinIO
+opus generate --concept "..." --save-s3 my-bucket/manuscripts/
+opus generate --concept "..." --save-s3 my-bucket/path/ --save-s3-endpoint https://nyc3.digitaloceanspaces.com
+
+# Generate and save to GitHub repo
+opus generate --concept "..." --save-repo owner/my-manuscripts
+opus generate --concept "..." --save-repo owner/my-manuscripts --save-branch develop --save-commit-msg "New story draft"
+
+# Generate from S3, save to GitHub
+opus generate --repo owner/repo --save-repo owner/output-repo
+
+# Generate from S3, save to different S3 bucket
+opus ingest-s3 --bucket input-bucket --prefix notes/ | opus generate --save-s3 output-bucket/
+
+# Ingest from S3/MinIO
 opus ingest-s3 --bucket my-bucket --prefix notes/ --output content.txt
 
 # Start API server

@@ -246,7 +246,28 @@ Examples:
     )
     gen_parser.add_argument(
         "--output", "-o",
-        help="Output file path",
+        help="Output file path (local)",
+    )
+    gen_parser.add_argument(
+        "--save-s3",
+        help="Save to S3 bucket (bucket/path format)",
+    )
+    gen_parser.add_argument(
+        "--save-s3-endpoint",
+        help="S3 endpoint URL (for MinIO, DO Spaces, etc.)",
+    )
+    gen_parser.add_argument(
+        "--save-repo",
+        help="Save to GitHub repo (owner/repo format)",
+    )
+    gen_parser.add_argument(
+        "--save-branch",
+        default="main",
+        help="GitHub branch to commit to (default: main)",
+    )
+    gen_parser.add_argument(
+        "--save-commit-msg",
+        help="Commit message for GitHub save",
     )
     gen_parser.add_argument(
         "--use-crewai",
@@ -549,29 +570,121 @@ async def run_generate(args: argparse.Namespace) -> int:
             
             manuscript = result.get("manuscript", str(result))
     
-    # Save output
-    output_path = args.output
-    if not output_path:
-        from datetime import datetime
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        output_path = f"opus_manuscript_{timestamp}.md"
-    
-    with open(output_path, "w") as f:
-        f.write(f"# Opus Generated Manuscript\n\n")
-        f.write(f"Framework: {args.framework}\n")
-        f.write(f"Genre: {args.genre}\n")
-        f.write(f"Type: {args.book_type}\n")
-        f.write(f"Chapters: {args.chapters}\n")
-        f.write(f"Target Words: {args.words:,}\n\n")
-        f.write(f"---\n\n")
-        f.write(manuscript)
+    # Build full manuscript content with metadata
+    manuscript_content = f"""# Opus Generated Manuscript
+
+Framework: {args.framework}
+Genre: {args.genre}
+Type: {args.book_type}
+Chapters: {args.chapters}
+Target Words: {args.words:,}
+
+---
+
+{manuscript}
+"""
     
     word_count = len(manuscript.split())
+    
+    # Save to local file
+    output_path = args.output
+    if output_path or args.save_s3 or args.save_repo:
+        # Determine filename
+        if not output_path:
+            from datetime import datetime
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            output_path = f"opus_manuscript_{timestamp}.md"
+        
+        with open(output_path, "w") as f:
+            f.write(manuscript_content)
+        
+        print(f"   💾 Saved locally: {output_path}")
+    
+    # Save to S3
+    if args.save_s3:
+        from opus_orchestrator import S3Ingestor
+        
+        bucket, key = args.save_s3.split("/", 1) if "/" in args.save_s3 else (args.save_s3, "")
+        if not key:
+            from datetime import datetime
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            key = f"manuscripts/opus_{timestamp}.md"
+        
+        print(f"   🪣 Saving to S3: {bucket}/{key}")
+        
+        s3 = S3Ingestor(endpoint_url=args.save_s3_endpoint, bucket=bucket)
+        
+        # Upload the manuscript content
+        import io
+        from botocore.config import Config
+        
+        s3.s3_client.put_object(
+            Bucket=bucket,
+            Key=key,
+            Body=manuscript_content.encode("utf-8"),
+            ContentType="text/markdown",
+        )
+        
+        print(f"   ✅ Uploaded to S3: s3://{bucket}/{key}")
+    
+    # Save to GitHub repo
+    if args.save_repo:
+        import requests
+        
+        print(f"   📤 Saving to GitHub: {args.save_repo}")
+        
+        github_token = os.environ.get("GITHUB_TOKEN")
+        if not github_token:
+            print("   ⚠️  GITHUB_TOKEN not set, cannot save to repo")
+        else:
+            # Parse owner/repo
+            owner, repo = args.save_repo.split("/")
+            
+            # Create filename
+            from datetime import datetime
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"manuscript_{timestamp}.md"
+            
+            # Get current branch
+            branch = args.save_branch
+            
+            # Create/update file via GitHub API
+            import base64
+            
+            api_url = f"https://api.github.com/repos/{owner}/{repo}/contents/manuscripts/{filename}"
+            
+            headers = {
+                "Authorization": f"token {github_token}",
+                "Accept": "application/vnd.github.v3+json",
+            }
+            
+            # Check if file exists to get SHA
+            existing = requests.get(api_url, headers=headers)
+            sha = existing.json().get("sha") if existing.status_code == 200 else None
+            
+            # Create content
+            content_b64 = base64.b64encode(manuscript_content.encode("utf-8")).decode("utf-8")
+            
+            data = {
+                "message": args.save_commit_msg or f"Add generated manuscript: {filename}",
+                "content": content_b64,
+                "branch": branch,
+            }
+            if sha:
+                data["sha"] = sha
+            
+            resp = requests.put(api_url, headers=headers, json=data)
+            
+            if resp.status_code in [200, 201]:
+                print(f"   ✅ Committed to GitHub: {args.save_repo}/manuscripts/{filename}")
+            else:
+                print(f"   ⚠️  GitHub save failed: {resp.status_code} - {resp.text}")
     
     print(f"\n{'='*60}")
     print(f"✅ COMPLETE!")
     print(f"   Words: {word_count:,}")
-    print(f"   Output: {output_path}")
+    if not args.output and not args.save_s3 and not args.save_repo:
+        print(f"   Output: {output_path}")
     print(f"{'='*60}\n")
     
     return 0
