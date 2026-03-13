@@ -8,12 +8,31 @@ Usage:
     opus generate --concept "Your story idea"
     opus serve --port 8000  # Start API server
     opus docs               # Show documentation
-"""
+    
+    # Or use as API client:
+    opus --api-url http://localhost:8000 generate --concept "..."
+
+Local mode (default): Runs generation locally using LangGraph/CrewAI
+API mode: Sends requests to Opus API server
+
+Usage:
+    opus [GLOBAL_OPTIONS] <command> [OPTIONS]
+
+Examples:
+  # Local generation
+  opus generate --concept "A robot dreams of love"
+  
+  # API client mode
+  opus --api-url http://localhost:8000 generate --concept "..."
+  opus --api-url https://opus-api.example.com generate --repo owner/repo
+        """
 
 import argparse
 import asyncio
 import os
 import sys
+import json
+import requests
 from pathlib import Path
 
 # Add the project root to the path
@@ -24,6 +43,123 @@ from dotenv import load_dotenv
 # Load environment variables
 env_path = Path(__file__).parent.parent / ".env"
 load_dotenv(env_path)
+
+
+# =============================================================================
+# API CLIENT
+# =============================================================================
+
+class OpusAPIClient:
+    """Client for Opus REST API."""
+    
+    def __init__(self, base_url: str):
+        """Initialize API client.
+        
+        Args:
+            base_url: Base URL of Opus API server
+        """
+        self.base_url = base_url.rstrip("/")
+        self.session = requests.Session()
+        self.session.headers.update({"Content-Type": "application/json"})
+    
+    def health(self) -> dict:
+        """Check API health."""
+        return self._get("/health")
+    
+    def frameworks(self) -> dict:
+        """List available frameworks."""
+        return self._get("/frameworks")
+    
+    def generate(
+        self,
+        concept: str = None,
+        repo: str = None,
+        framework: str = "snowflake",
+        genre: str = "fiction",
+        book_type: str = "fiction",
+        target_word_count: int = 5000,
+        chapters: int = 3,
+        tone: str = "literary",
+        use_crewai: bool = False,
+        use_autogen: bool = True,
+    ) -> dict:
+        """Generate a manuscript.
+        
+        Args:
+            concept: Seed concept
+            repo: GitHub repo to ingest
+            framework: Story framework
+            genre: Genre
+            book_type: Book type
+            target_word_count: Target word count
+            chapters: Number of chapters
+            tone: Writing tone
+            use_crewai: Use CrewAI
+            use_autogen: Use AutoGen critique
+            
+        Returns:
+            Generation result dict
+        """
+        payload = {
+            "framework": framework,
+            "genre": genre,
+            "book_type": book_type,
+            "target_word_count": target_word_count,
+            "chapters": chapters,
+            "tone": tone,
+            "use_crewai": use_crewai,
+            "use_autogen": use_autogen,
+        }
+        
+        if concept:
+            payload["concept"] = concept
+        if repo:
+            payload["repo"] = repo
+        
+        return self._post("/generate", payload)
+    
+    def ingest(self, repo: str, include_readme: bool = True) -> dict:
+        """Ingest from GitHub.
+        
+        Args:
+            repo: GitHub repo (owner/repo)
+            include_readme: Include README files
+            
+        Returns:
+            Ingested content
+        """
+        return self._post("/ingest", {
+            "repo": repo,
+            "include_readme": include_readme,
+        })
+    
+    def _get(self, endpoint: str) -> dict:
+        """GET request."""
+        url = f"{self.base_url}{endpoint}"
+        response = self.session.get(url)
+        response.raise_for_status()
+        return response.json()
+    
+    def _post(self, endpoint: str, data: dict) -> dict:
+        """POST request."""
+        url = f"{self.base_url}{endpoint}"
+        response = self.session.post(url, json=data)
+        response.raise_for_status()
+        return response.json()
+
+
+def get_api_client(api_url: str = None) -> OpusAPIClient | None:
+    """Get API client if URL provided.
+    
+    Args:
+        api_url: API base URL
+        
+    Returns:
+        OpusAPIClient or None
+    """
+    if api_url:
+        return OpusAPIClient(api_url)
+    return None
 
 
 def setup_cli() -> argparse.ArgumentParser:
@@ -38,8 +174,7 @@ and PydanticAI for professional manuscript production.
 Examples:
   opus generate --concept "A robot dreams of love" --framework snowflake
   opus serve --port 8080
-  opus docs
-  opus ingest --repo mrhavens/my-book
+  opus --api-url http://localhost:8000 generate --concept "..."
         """,
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
@@ -48,6 +183,12 @@ Examples:
         "--version", "-v",
         action="version",
         version="Opus Orchestrator AI v0.2.0",
+    )
+    
+    # Global option for API client mode
+    parser.add_argument(
+        "--api-url",
+        help="Use API server at this URL (client mode). Without this, runs locally.",
     )
     
     subparsers = parser.add_subparsers(dest="command", help="Command to run")
@@ -293,86 +434,121 @@ async def run_generate(args: argparse.Namespace) -> int:
     print("📚 OPUS ORCHESTRATOR AI")
     print(f"{'='*60}\n")
     
-    # Determine the seed concept
-    seed_concept = args.concept
-    
-    if args.repo:
-        # Ingest from GitHub - use FULL content
-        print(f"📥 Ingesting from GitHub: {args.repo}")
+    # Check for API client mode
+    if args.api_url:
+        client = OpusAPIClient(args.api_url)
         
-        orch = OpusOrchestrator(
-            book_type=args.book_type,
-            genre=args.genre,
-            target_word_count=args.words,
-            framework=args.framework,
-        )
+        print(f"🌐 API Client Mode")
+        print(f"   Server: {args.api_url}\n")
         
-        content = orch.ingest_from_github(args.repo)
-        
-        # Use full content as seed
-        full_text = content.text
-        print(f"   ✅ Loaded {len(full_text):,} characters from {content.metadata['file_count']} files")
-        print(f"   📄 Files: {', '.join(content.metadata['files'])}\n")
-        
-        seed_concept = full_text
-    
-    if not seed_concept:
-        print("Error: Please provide --concept or --repo")
-        return 1
-    
-    # Show generation parameters
-    print(f"🎯 Generating {args.words:,} words ({args.chapters} chapters)")
-    print(f"   Framework: {args.framework}")
-    print(f"   Genre: {args.genre}")
-    print(f"   Type: {args.book_type}")
-    print(f"   Tone: {args.tone}")
-    print(f"   CrewAI: {args.use_crewai}")
-    print(f"   AutoGen: {not args.no_autogen}")
-    print()
-    
-    use_autogen = not args.no_autogen
-    
-    if args.use_crewai:
-        # Use CrewAI crews
-        print("🛠️  Using CrewAI crews...\n")
-        
-        if args.book_type == "fiction":
-            crew = create_fiction_crew(
+        # Call API
+        try:
+            result = client.generate(
+                concept=args.concept,
+                repo=args.repo,
+                framework=args.framework,
                 genre=args.genre,
-                tone=args.tone,
-                target_word_count=args.words // args.chapters,
-            )
-            
-            story = crew.write_full_story(
-                story_outline=seed_concept[:10000],  # Limit for crew context
-                character_sheets="",
-                style_guide=f"Tone: {args.tone}",
-                num_chapters=args.chapters,
-            )
-            
-            manuscript = "\n\n---\n\n".join(story)
-        else:
-            crew = create_nonfiction_crew(
-                topic=args.genre,
-                tone=args.tone,
+                book_type=args.book_type,
                 target_word_count=args.words,
+                chapters=args.chapters,
+                tone=args.tone,
+                use_crewai=args.use_crewai,
+                use_autogen=not args.no_autogen,
             )
             
-            manuscript = crew.write_section(
-                section_outline=seed_concept[:10000],
-                style_guide=f"Tone: {args.tone}",
-            )
+            print(f"✅ Generation complete!")
+            print(f"   Words: {result.get('word_count', 'N/A'):,}")
+            print(f"   Chapters: {result.get('chapters', 'N/A')}")
+            print(f"   Framework: {result.get('framework', 'N/A')}\n")
+            
+            manuscript = result.get("manuscript", "")
+            
+        except Exception as e:
+            print(f"❌ API Error: {e}")
+            return 1
     else:
-        # Use LangGraph pipeline
-        result = await run_opus(
-            seed_concept=seed_concept,
-            framework=args.framework,
-            genre=args.genre,
-            target_word_count=args.words,
-            use_autogen=use_autogen,
-        )
+        # LOCAL MODE - run locally
+        # Determine the seed concept
+        seed_concept = args.concept
         
-        manuscript = result.get("manuscript", str(result))
+        if args.repo:
+            # Ingest from GitHub - use FULL content
+            print(f"📥 Ingesting from GitHub: {args.repo}")
+            
+            orch = OpusOrchestrator(
+                book_type=args.book_type,
+                genre=args.genre,
+                target_word_count=args.words,
+                framework=args.framework,
+            )
+            
+            content = orch.ingest_from_github(args.repo)
+            
+            # Use full content as seed
+            full_text = content.text
+            print(f"   ✅ Loaded {len(full_text):,} characters from {content.metadata['file_count']} files")
+            print(f"   📄 Files: {', '.join(content.metadata['files'])}\n")
+            
+            seed_concept = full_text
+        
+        if not seed_concept:
+            print("Error: Please provide --concept or --repo")
+            return 1
+        
+        # Show generation parameters
+        print(f"🏠 Local Mode")
+        print(f"🎯 Generating {args.words:,} words ({args.chapters} chapters)")
+        print(f"   Framework: {args.framework}")
+        print(f"   Genre: {args.genre}")
+        print(f"   Type: {args.book_type}")
+        print(f"   Tone: {args.tone}")
+        print(f"   CrewAI: {args.use_crewai}")
+        print(f"   AutoGen: {not args.no_autogen}")
+        print()
+        
+        use_autogen = not args.no_autogen
+        
+        if args.use_crewai:
+            # Use CrewAI crews
+            print("🛠️  Using CrewAI crews...\n")
+            
+            if args.book_type == "fiction":
+                crew = create_fiction_crew(
+                    genre=args.genre,
+                    tone=args.tone,
+                    target_word_count=args.words // args.chapters,
+                )
+                
+                story = crew.write_full_story(
+                    story_outline=seed_concept[:10000],  # Limit for crew context
+                    character_sheets="",
+                    style_guide=f"Tone: {args.tone}",
+                    num_chapters=args.chapters,
+                )
+                
+                manuscript = "\n\n---\n\n".join(story)
+            else:
+                crew = create_nonfiction_crew(
+                    topic=args.genre,
+                    tone=args.tone,
+                    target_word_count=args.words,
+                )
+                
+                manuscript = crew.write_section(
+                    section_outline=seed_concept[:10000],
+                    style_guide=f"Tone: {args.tone}",
+                )
+        else:
+            # Use LangGraph pipeline
+            result = await run_opus(
+                seed_concept=seed_concept,
+                framework=args.framework,
+                genre=args.genre,
+                target_word_count=args.words,
+                use_autogen=use_autogen,
+            )
+            
+            manuscript = result.get("manuscript", str(result))
     
     # Save output
     output_path = args.output
@@ -425,22 +601,40 @@ def run_ingest(args: argparse.Namespace) -> int:
     
     print(f"\n📥 Ingesting from GitHub: {args.repo}\n")
     
-    orch = OpusOrchestrator(book_type="fiction")
-    content = orch.ingest_from_github(args.repo, include_readme=args.include_readme)
+    # Check for API client mode
+    if args.api_url:
+        client = OpusAPIClient(args.api_url)
+        print(f"🌐 API Client Mode: {args.api_url}\n")
+        
+        try:
+            result = client.ingest(args.repo, include_readme=args.include_readme)
+            content_text = result.get("content", "")
+            file_count = result.get("file_count", 0)
+            files = result.get("files", [])
+        except Exception as e:
+            print(f"❌ API Error: {e}")
+            return 1
+    else:
+        # Local mode
+        orch = OpusOrchestrator(book_type="fiction")
+        content = orch.ingest_from_github(args.repo, include_readme=args.include_readme)
+        content_text = content.text
+        file_count = content.metadata["file_count"]
+        files = content.metadata["files"]
     
-    print(f"✅ Loaded {len(content.text):,} characters")
-    print(f"   Files: {content.metadata['file_count']}")
-    print(f"   File list: {', '.join(content.metadata['files'])}\n")
+    print(f"✅ Loaded {len(content_text):,} characters")
+    print(f"   Files: {file_count}")
+    print(f"   File list: {', '.join(files)}\n")
     
     if args.preview:
         print("📄 PREVIEW (first 2000 chars):")
         print("-" * 40)
-        print(content.text[:2000])
+        print(content_text[:2000])
         print("-" * 40)
     
     if args.output:
         with open(args.output, "w") as f:
-            f.write(content.text)
+            f.write(content_text)
         print(f"\n💾 Saved to: {args.output}")
     
     return 0
