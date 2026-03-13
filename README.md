@@ -102,9 +102,30 @@ opus ingest-local ./notes --summarize --max-length 5000
 | Mode | Description | Status |
 |------|-------------|--------|
 | **CLI** | Standalone command-line tool | ✅ |
+| **Web UI** | Browser-based interface | ✅ |
 | **API Server** | FastAPI REST server | ✅ |
 | **API Client** | Client mode for remote servers | ✅ |
 | **Python Module** | Import as library | ✅ |
+
+### Web Interface
+
+```bash
+# Start web UI only (no API)
+opus ui --port 8080
+
+# Start full API server (includes web UI)
+opus serve --port 8000
+```
+
+Then open http://localhost:8080 in your browser!
+
+Features:
+- 💡 Enter story concept
+- 🐙 Pull from GitHub
+- 🪣 Load from S3
+- 📁 Upload files
+- ☁️ Save to S3/GitHub
+- 📥 Download manuscript
 
 ### Output Options
 
@@ -260,6 +281,20 @@ print(result["manuscript"])
 | `AWS_ACCESS_KEY_ID` | AWS access key for S3 | No |
 | `AWS_SECRET_ACCESS_KEY` | AWS secret key for S3 | No |
 | `S3_ENDPOINT_URL` | Custom S3 endpoint (MinIO, DO Spaces) | No |
+
+### API Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/` | GET | Web UI |
+| `/ui` | GET | Web UI |
+| `/docs` | GET | Interactive API docs |
+| `/health` | GET | Health check |
+| `/frameworks` | GET | List frameworks |
+| `/generate` | POST | Generate manuscript |
+| `/ingest` | POST | Ingest from GitHub |
+| `/upload` | POST | Upload file |
+| `/upload/s3` | POST | Upload to S3 |
 
 ### Configuration File
 
