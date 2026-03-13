@@ -22,6 +22,11 @@ from opus_orchestrator.agents.nonfiction import (
     NonfictionWriterAgent,
     ResearcherAgent,
 )
+from opus_orchestrator.agents.research import (
+    ResearchAgent,
+    VerifiedFactChecker,
+    create_research_agent,
+)
 from opus_orchestrator.config import OpusConfig, get_config
 from opus_orchestrator.schemas import (
     BookIntent,
@@ -83,6 +88,10 @@ __all__ = [
     "NonfictionWriterAgent",
     "FactCheckerAgent",
     "NonfictionEditorAgent",
+    # Research Agent (NEW!)
+    "ResearchAgent",
+    "VerifiedFactChecker",
+    "create_research_agent",
     # LangGraph
     "OpusGraph",
     "OpusGraphState",
