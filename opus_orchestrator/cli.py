@@ -270,6 +270,11 @@ Examples:
         help="Commit message for GitHub save",
     )
     gen_parser.add_argument(
+        "--local",
+        "-l",
+        help="Local file or directory to use as source",
+    )
+    gen_parser.add_argument(
         "--use-crewai",
         action="store_true",
         help="Use CrewAI crews instead of LangGraph",
@@ -374,6 +379,48 @@ Examples:
         "--list-objects",
         action="store_true",
         help="List objects instead of downloading",
+    )
+    
+    # -------------------------------------------------------------------------
+    # INGEST-LOCAL COMMAND
+    # -------------------------------------------------------------------------
+    local_parser = subparsers.add_parser(
+        "ingest-local",
+        help="Ingest content from local files/directories",
+        description="Fetch and analyze content from local files and directories",
+    )
+    local_parser.add_argument(
+        "path",
+        help="File or directory path to ingest",
+    )
+    local_parser.add_argument(
+        "--extensions", "-e",
+        help="Comma-separated file extensions (default: txt,md,markdown,notes,draft)",
+    )
+    local_parser.add_argument(
+        "--no-recursive",
+        action="store_true",
+        help="Don't scan subdirectories",
+    )
+    local_parser.add_argument(
+        "--output", "-o",
+        help="Output file for ingested content",
+    )
+    local_parser.add_argument(
+        "--preview",
+        action="store_true",
+        help="Show preview of ingested content",
+    )
+    local_parser.add_argument(
+        "--summarize",
+        action="store_true",
+        help="Summarize content instead of full ingest",
+    )
+    local_parser.add_argument(
+        "--max-length",
+        type=int,
+        default=10000,
+        help="Max length for summary (default: 10000)",
     )
     
     # -------------------------------------------------------------------------
@@ -491,7 +538,24 @@ async def run_generate(args: argparse.Namespace) -> int:
         # Determine the seed concept
         seed_concept = args.concept
         
-        if args.repo:
+        if args.local:
+            # Ingest from local files/directory
+            from opus_orchestrator import LocalIngestor
+            
+            print(f"📂 Ingesting from local: {args.local}")
+            
+            ingestor = LocalIngestor()
+            result = ingestor.ingest(args.local)
+            
+            full_text = result["combined_text"]
+            print(f"   ✅ Loaded {len(full_text):,} characters from {result['file_count']} files")
+            print(f"   📄 Files: {', '.join(list(result['files'].keys())[:5])}")
+            if result['file_count'] > 5:
+                print(f"   ... and {result['file_count'] - 5} more")
+            print()
+            
+            seed_concept = full_text
+        elif args.repo:
             # Ingest from GitHub - use FULL content
             print(f"📥 Ingesting from GitHub: {args.repo}")
             
@@ -800,6 +864,60 @@ def run_s3_ingest(args: argparse.Namespace) -> int:
     return 0
 
 
+def run_local_ingest(args: argparse.Namespace) -> int:
+    """Ingest content from local files/directories."""
+    from opus_orchestrator import LocalIngestor
+    
+    print(f"\n📂 Ingesting from local: {args.path}\n")
+    
+    # Parse extensions
+    extensions = None
+    if args.extensions:
+        extensions = [ext.strip() for ext in args.extensions.split(",")]
+    
+    # Create ingestor
+    ingestor = LocalIngestor()
+    
+    # Ingest
+    result = ingestor.ingest(
+        path=args.path,
+        extensions=extensions,
+        recursive=not args.no_recursive,
+    )
+    
+    if args.summarize:
+        content = ingestor.summarize(result["combined_text"], args.max_length)
+    else:
+        content = result["combined_text"]
+    
+    print(f"✅ Loaded {result['total_chars']:,} characters")
+    print(f"   Files: {result['file_count']}")
+    print(f"   Root: {result['path']}")
+    
+    files_list = list(result["files"].keys())
+    print(f"   File list: {', '.join(files_list[:10])}")
+    if len(files_list) > 10:
+        print(f"   ... and {len(files_list) - 10} more")
+    
+    if args.summarize:
+        print(f"   📝 Summarized to {args.max_length} characters")
+    
+    print()
+    
+    if args.preview:
+        print("📄 PREVIEW (first 2000 chars):")
+        print("-" * 40)
+        print(content[:2000])
+        print("-" * 40)
+    
+    if args.output:
+        with open(args.output, "w") as f:
+            f.write(content)
+        print(f"\n💾 Saved to: {args.output}")
+    
+    return 0
+
+
 def run_frameworks(args: argparse.Namespace) -> int:
     """List available frameworks."""
     from opus_orchestrator.frameworks import FRAMEWORKS
@@ -919,6 +1037,7 @@ async def main_async(args: argparse.Namespace) -> int:
         "serve": run_serve,
         "ingest": run_ingest,
         "ingest-s3": run_s3_ingest,
+        "ingest-local": run_local_ingest,
         "frameworks": run_frameworks,
         "config": run_config,
         "docs": run_docs,
