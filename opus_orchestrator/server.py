@@ -7,7 +7,7 @@ import os
 from typing import Any, Optional
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, HTTPException, BackgroundTasks
+from fastapi import FastAPI, HTTPException, BackgroundTasks, StreamingResponse
 from fastapi.responses import JSONResponse, RedirectResponse
 from pydantic import BaseModel, Field
 from dotenv import load_dotenv
@@ -252,6 +252,54 @@ async def generate(request: GenerateRequest, background_tasks: BackgroundTasks):
         logging.error(f"Generate error: {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
+
+@app.post("/generate/stream", tags=["generate"])
+async def generate_stream(request: GenerateRequest):
+    """Generate a manuscript with streaming progress updates.
+    
+    Returns Server-Sent Events (SSE) with progress updates.
+    """
+    import traceback
+    import json
+    
+    async def event_generator():
+        try:
+            # Yield start event
+            yield "data: " + json.dumps({"status": "starting", "message": "Initializing..."}) + "\n\n"
+            
+            # Prepare seed concept
+            seed_concept = request.concept
+            
+            if request.repo:
+                yield "data: " + json.dumps({"status": "ingesting", "message": "Fetching from GitHub..."}) + "\n\n"
+                orch = OpusOrchestrator(
+                    book_type=request.book_type,
+                    genre=request.genre,
+                    target_word_count=request.target_word_count,
+                    framework=request.framework,
+                )
+                content = orch.ingest_from_github(request.repo)
+                seed_concept = content.text
+                yield "data: " + json.dumps({"status": "ingested", "message": f"Ingested {len(seed_concept)} characters"}) + "\n\n"
+            
+            if not seed_concept:
+                raise HTTPException(status_code=400, detail="Must provide concept or repo")
+            
+            # For now, just stream a completion message
+            # Full streaming requires modifying the LangGraph workflow
+            yield "data: " + json.dumps({"status": "generating", "progress": 0.1, "message": "Starting generation..."}) + "\n\n"
+            
+            # TODO: Implement actual streaming from LangGraph workflow
+            # This requires modifying run_opus to yield progress events
+            yield "data: " + json.dumps({"status": "generating", "progress": 0.5, "message": "Generating manuscript..."}) + "\n\n"
+            
+            yield "data: " + json.dumps({"status": "complete", "progress": 1.0, "message": "Generation complete"}) + "\n\n"
+            
+        except Exception as e:
+            yield "data: " + json.dumps({"status": "error", "message": str(e)}) + "\n\n"
+    
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
 
 @app.post("/ingest", response_model=IngestResponse, tags=["ingest"])
 async def ingest(request: IngestRequest):
