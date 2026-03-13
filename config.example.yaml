@@ -1,0 +1,96 @@
+# Opus Orchestrator AI Configuration
+# Copy this file to .env or config.yaml and configure
+
+# =============================================================================
+# LLM Configuration
+# =============================================================================
+
+# OpenAI Configuration (recommended)
+openai_api_key: sk-your-openai-key-here
+
+# MiniMax Configuration (alternative)
+# minimax_api_key: sk-your-minimax-key-here
+
+# =============================================================================
+# API Configuration
+# =============================================================================
+
+# Default LLM provider: openai, anthropic, or minimax
+agent_provider: openai
+
+# Model to use
+agent_model: gpt-4o
+
+# Temperature for generation (0.0 - 1.0)
+agent_temperature: 0.7
+
+# Maximum tokens per response (null = unlimited)
+# agent_max_tokens: null
+
+# =============================================================================
+# GitHub Configuration
+# =============================================================================
+
+# GitHub token for private repository access
+github_token: ghp_your_token_here
+
+# =============================================================================
+# S3/MinIO Configuration
+# =============================================================================
+
+# AWS Credentials
+aws_access_key_id: your-access-key
+aws_secret_access_key: your-secret-key
+aws_region: us-east-1
+
+# Custom S3 Endpoint (for MinIO, DigitalOcean Spaces, Wasabi, etc.)
+# s3_endpoint_url: https://nyc3.digitaloceanspaces.com
+
+# =============================================================================
+# Iteration Configuration
+# =============================================================================
+
+# Minimum critique rounds
+iteration_min_critic_rounds: 2
+
+# Maximum critique rounds
+iteration_max_critic_rounds: 5
+
+# Score threshold for approval (0.0 - 1.0)
+iteration_approval_threshold: 0.8
+
+# =============================================================================
+# Output Configuration
+# =============================================================================
+
+# Output format: markdown, html, txt
+output_format: markdown
+
+# Include table of contents
+output_include_toc: true
+
+# Output directory
+output_dir: ./output
+
+# =============================================================================
+# Server Configuration
+# =============================================================================
+
+# API Server Host
+server_host: 0.0.0.0
+
+# API Server Port
+server_port: 8000
+
+# Web UI Port
+web_ui_port: 8080
+
+# Enable CORS
+server_cors_enabled: true
+
+# =============================================================================
+# Logging
+# =============================================================================
+
+# Log level: DEBUG, INFO, WARNING, ERROR
+log_level: INFO
