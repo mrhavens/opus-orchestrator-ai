@@ -1,13 +1,6 @@
 """Main Opus Orchestrator - Snowflake Method Implementation with Multiple Frameworks.
 
-Full pipeline supporting multiple story frameworks:
-- Snowflake Method (fractal expansion)
-- Three-Act Structure
-- Save the Cat (Blake Snyder)
-- Hero's Journey (Joseph Campbell)
-- Story Circle (Dan Harmon)
-- The 7-Point Plot (The Pantone)
-- Fichtean Curve
+Full pipeline supporting multiple story frameworks and GitHub ingestion.
 """
 
 import asyncio
@@ -52,6 +45,7 @@ from opus_orchestrator.schemas import (
     RawContent,
 )
 from opus_orchestrator.state import OpusState
+from opus_orchestrator.utils.github_ingest import GitHubIngestor
 
 
 class OpusOrchestrator:

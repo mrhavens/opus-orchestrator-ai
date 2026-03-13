@@ -28,6 +28,7 @@ from opus_orchestrator.schemas import (
 from opus_orchestrator.state import OpusState, create_initial_state
 from opus_orchestrator.langgraph_workflow import OpusGraph, run_opus, OpusGraphState
 from opus_orchestrator.autogen_critique import CritiqueCrew, create_critique_crew
+from opus_orchestrator.utils.github_ingest import GitHubIngestor, create_github_ingestor
 from opus_orchestrator.frameworks import StoryFramework
 
 __all__ = [
