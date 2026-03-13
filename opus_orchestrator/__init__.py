@@ -41,6 +41,21 @@ from opus_orchestrator.crews import (
     create_fiction_crew,
     create_nonfiction_crew,
 )
+from opus_orchestrator.pydanticai_agent import (
+    OpusPydanticAgent,
+    StorySeed,
+    CharacterProfile,
+    ChapterOutline,
+    ChapterDraft,
+    CritiqueResult,
+    StyleGuide,
+    create_story_seed_agent,
+    create_character_agent,
+    create_chapter_outline_agent,
+    create_chapter_draft_agent,
+    create_critique_agent,
+    create_style_guide_agent,
+)
 
 __all__ = [
     # Config
@@ -71,12 +86,26 @@ __all__ = [
     "OpusGraphState",
     "run_opus",
     "StoryFramework",
-    # Crews (NEW!)
+    # Crews
     "OpusCrew",
     "FictionCrew",
     "NonfictionCrew",
     "create_fiction_crew",
     "create_nonfiction_crew",
+    # PydanticAI (NEW!)
+    "OpusPydanticAgent",
+    "StorySeed",
+    "CharacterProfile",
+    "ChapterOutline",
+    "ChapterDraft",
+    "CritiqueResult",
+    "StyleGuide",
+    "create_story_seed_agent",
+    "create_character_agent",
+    "create_chapter_outline_agent",
+    "create_chapter_draft_agent",
+    "create_critique_agent",
+    "create_style_guide_agent",
     # Main
     "OpusOrchestrator",
     "CritiqueCrew",
