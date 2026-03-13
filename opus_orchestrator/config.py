@@ -90,8 +90,8 @@ def load_config_from_env() -> OpusConfig:
         default_model = "MiniMax/MiniMax-M2.1"
         api_key = minimax_key
     else:
-        provider = "openai"  # default
-        default_model = "gpt-4o"
+        provider = "minimax"  # Default to minimax
+        default_model = "MiniMax/MiniMax-M2.1"
         api_key = None
     
     github_token = _load_env("GITHUB_TOKEN")
