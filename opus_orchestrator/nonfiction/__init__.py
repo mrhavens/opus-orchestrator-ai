@@ -8,6 +8,7 @@ Key components:
 - expanded_frameworks: 35+ expert-level frameworks
 - research_integration: Connect research agent to pipeline
 - textbook_frameworks: Educational/academic frameworks
+- academic_papers: Established academic paper types
 """
 
 from opus_orchestrator.nonfiction.classifier import (
@@ -54,6 +55,11 @@ from opus_orchestrator.nonfiction.textbook_frameworks import (
     get_textbook_frameworks,
     suggest_textbook_framework,
 )
+from opus_orchestrator.nonfiction.academic_papers import (
+    ACADEMIC_PAPER_TYPES,
+    get_academic_paper_types,
+    suggest_academic_paper,
+)
 
 __all__ = [
     # Classifier
@@ -93,4 +99,8 @@ __all__ = [
     "TEXTBOOK_FRAMEWORKS",
     "get_textbook_frameworks",
     "suggest_textbook_framework",
+    # Academic Papers
+    "ACADEMIC_PAPER_TYPES",
+    "get_academic_paper_types",
+    "suggest_academic_paper",
 ]
