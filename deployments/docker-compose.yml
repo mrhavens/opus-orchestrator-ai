@@ -1,0 +1,39 @@
+# Opus Orchestrator API
+# Docker Compose for local development
+
+version: '3.8'
+
+services:
+  opus-api:
+    image: opus-orchestrator:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - MINIMAX_API_KEY=${MINIMAX_API_KEY}
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+      - LOG_LEVEL=INFO
+    volumes:
+      - ./output:/app/output
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  texlive-api:
+    image: alex11br/texlive-api
+    ports:
+      - "8080:8080"
+    volumes:
+      - texlive-cache:/root/.texlive
+    environment:
+      - TEXLIVE_ENGINE=xelatex
+      - MAX_TIMEOUT=180
+    restart: unless-stopped
+
+volumes:
+  texlive-cache:
