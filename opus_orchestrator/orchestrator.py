@@ -8,7 +8,6 @@ import os
 from pathlib import Path
 from typing import Any, Optional
 
-from dotenv import load_dotenv
 
 
 from opus_orchestrator.agents.fiction import (
