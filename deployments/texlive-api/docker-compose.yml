@@ -1,0 +1,18 @@
+# TeX Live API Service
+# Run with: docker-compose up -d
+
+version: '3.8'
+
+services:
+  texlive-api:
+    image: alex11br/texlive-api
+    ports:
+      - "8080:8080"
+    volumes:
+      - texlive-cache:/root/.texlive
+    environment:
+      - TEXLIVE_ENGINE=xelatex
+      - MAX_TIMEOUT=180
+
+volumes:
+  texlive-cache:
