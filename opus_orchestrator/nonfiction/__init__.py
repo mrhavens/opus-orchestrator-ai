@@ -10,6 +10,7 @@ Key components:
 - textbook_frameworks: Educational/academic frameworks
 - academic_papers: Established academic paper types
 - creative_frameworks: Interactive, epistolary, experimental formats
+- rpg_frameworks: Tabletop RPG content (DM guides, modules, etc.)
 """
 
 from opus_orchestrator.nonfiction.classifier import (
@@ -66,6 +67,11 @@ from opus_orchestrator.nonfiction.creative_frameworks import (
     get_creative_frameworks,
     suggest_creative_framework,
 )
+from opus_orchestrator.nonfiction.rpg_frameworks import (
+    RPG_FRAMEWORKS,
+    get_rpg_frameworks,
+    suggest_rpg_framework,
+)
 
 __all__ = [
     # Classifier
@@ -113,4 +119,8 @@ __all__ = [
     "CREATIVE_FRAMEWORKS",
     "get_creative_frameworks",
     "suggest_creative_framework",
+    # RPG Frameworks
+    "RPG_FRAMEWORKS",
+    "get_rpg_frameworks",
+    "suggest_rpg_framework",
 ]
