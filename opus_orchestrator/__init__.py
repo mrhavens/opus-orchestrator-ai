@@ -174,3 +174,16 @@ def __getattr__(name):
         from opus_orchestrator.latex_compile import compile_pdf
         return compile_pdf
     raise AttributeError(f"module has no attribute {name!r}")
+
+# HTML Export
+def __getattr__(name):
+    if name == "export_to_html":
+        from opus_orchestrator.html_export import export_to_html
+        return export_to_html
+    if name == "export_to_pdf":
+        from opus_orchestrator.html_export import export_to_pdf
+        return export_to_pdf
+    if name == "HTMLExporter":
+        from opus_orchestrator.html_export import HTMLExporter
+        return HTMLExporter
+    raise AttributeError(f"module has no attribute {name!r}")
