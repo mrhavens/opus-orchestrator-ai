@@ -58,8 +58,8 @@ class GenerateRequest(BaseModel):
     framework: str = Field("snowflake", description="Story framework")
     genre: str = Field("fiction", description="Genre")
     book_type: str = Field("fiction", description="Book type (fiction/nonfiction)")
-    target_word_count: int = Field(5000, description="Target word count")
-    chapters: int = Field(3, description="Number of chapters")
+    target_word_count: int = Field(5000, ge=1, le=500000, description="Target word count")
+    chapters: int = Field(3, ge=1, le=100, description="Number of chapters")
     tone: str = Field("literary", description="Writing tone")
     use_crewai: bool = Field(False, description="Use CrewAI instead of LangGraph")
     use_autogen: bool = Field(True, description="Use AutoGen critique")
@@ -312,17 +312,45 @@ async def generate_stream(request: GenerateRequest):
                 yield "data: " + json.dumps({"status": "ingested", "message": f"Ingested {len(seed_concept)} characters"}) + "\n\n"
             
             if not seed_concept:
-                raise HTTPException(status_code=400, detail="Must provide concept or repo")
+                yield "data: " + json.dumps({"status": "error", "message": "Must provide concept or repo"}) + "\n\n"
+                return
             
-            # For now, just stream a completion message
-            # Full streaming requires modifying the LangGraph workflow
+            # Call run_opus and return real result
             yield "data: " + json.dumps({"status": "generating", "progress": 0.1, "message": "Starting generation..."}) + "\n\n"
             
-            # TODO: Implement actual streaming from LangGraph workflow
-            # This requires modifying run_opus to yield progress events
-            yield "data: " + json.dumps({"status": "generating", "progress": 0.5, "message": "Generating manuscript..."}) + "\n\n"
-            
-            yield "data: " + json.dumps({"status": "complete", "progress": 1.0, "message": "Generation complete"}) + "\n\n"
+            try:
+                result = await run_opus(
+                    seed_concept=seed_concept,
+                    framework=request.framework,
+                    genre=request.genre,
+                    target_word_count=request.target_word_count,
+                )
+                
+                yield "data: " + json.dumps({"status": "generating", "progress": 0.5, "message": "Processing result..."}) + "\n\n"
+                
+                # Extract manuscript from result
+                if isinstance(result, dict):
+                    manuscript = result.get("manuscript", "")
+                    if not manuscript:
+                        chapters = result.get("chapters", [])
+                        if chapters:
+                            manuscript = "\n\n---\n\n".join(str(c) for c in chapters)
+                        else:
+                            manuscript = str(result)
+                else:
+                    manuscript = str(result)
+                
+                word_count = len(manuscript.split())
+                
+                yield "data: " + json.dumps({
+                    "status": "complete",
+                    "progress": 1.0,
+                    "message": f"Generation complete ({word_count} words)",
+                    "manuscript": manuscript[:1000] + "..." if len(manuscript) > 1000 else manuscript
+                }) + "\n\n"
+                
+            except Exception as e:
+                yield "data: " + json.dumps({"status": "error", "message": str(e)}) + "\n\n"
             
         except Exception as e:
             yield "data: " + json.dumps({"status": "error", "message": str(e)}) + "\n\n"
