@@ -101,26 +101,21 @@ def load_config_from_env() -> OpusConfig:
     """Load configuration from environment variables.
     
     Reads:
-    - MINIMAX_API_KEY or OPENAI_API_KEY for LLM
+    - MINIMAX_API_KEY for LLM
     - GITHUB_TOKEN for GitHub operations
     
-    Prefers MINIMAX_API_KEY (more cost-effective).
+    Uses MiniMax exclusively.
     """
-    # Load API keys - prefer MiniMax by default
-    openai_key = _load_env("OPENAI_API_KEY")
+    # Load MiniMax API key
     minimax_key = _load_env("MINIMAX_API_KEY")
     
-    # Use MiniMax by default (cost-effective), fall back to OpenAI if needed
+    # Use MiniMax only
     if minimax_key:
         provider = "minimax"
         default_model = "MiniMax/MiniMax-M2.1"
         api_key = minimax_key
-    elif openai_key:
-        provider = "openai"
-        default_model = "gpt-4o"
-        api_key = openai_key
     else:
-        provider = "minimax"  # Default to minimax
+        provider = "minimax"
         default_model = "MiniMax/MiniMax-M2.1"
         api_key = None
     
