@@ -1,0 +1,122 @@
+% Legrand Orange Book Template
+% Inspired by "The Legrand Orange Book" template
+% http://www.latextemplates.com/the-legrand-orange-book
+
+\documentclass[12pt]{memoir}
+
+% Packages
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{geometry}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{titlesec}
+\usepackage{wallpaper}
+\usepackage{framed}
+
+% Orange color scheme
+\definecolor{orange}{RGB}{243,156,18}
+\definecolor{darkorange}{RGB}{211,84,0}
+\definecolor{darkblue}{RGB}{52,73,94}
+
+% Geometry
+\geometry{
+  paperwidth=6in,
+  paperheight=9in,
+  textwidth=4.5in,
+  textheight=7.5in,
+  inner=0.75in,
+  outer=0.5in,
+}
+
+% Hyperref
+\hypersetup{
+  colorlinks=true,
+  linkcolor=darkblue,
+  citecolor=darkblue,
+  urlcolor=darkblue,
+}
+
+% Chapter style - Orange box
+\chapterstyle{veelo}
+
+% Chapter title format
+\titleformat{\chapter}[display]%
+  {\normalfont\LARGE\bfseries}%
+  {\color{orange}\chaptertitlename\ \thechapter}{20pt}%
+  {\color{orange}\Huge\bfseries}
+
+% Section format
+\titleformat{\section}
+  {\color{darkblue}\normalfont\Large\bfseries}
+  {\color{darkblue}\thesection}{1em}{}
+
+% Orange chapter boxes
+\makechapterstyle{orangechapter}{
+  \chapterstyle{default}
+  \def\chapterheadstart{}
+  \def\afterchaptertitle{\par\nobreak\vskip 1.5em}
+  \def\chapternamenum{}
+  \def\printchaptername{\raggedleft\color{orange}\scshape\@chapapp}
+  \def\chapternamenum{\scshape\thechapter}
+  \def\printchapternum{\chapternamenum}
+  \def\afterchapternum{\par\nobreak\vskip 1.5em}
+  \def\printchaptertitle[1]{\raggedleft\color{orange}\Huge\bfseries ##1}
+}
+
+\chapterstyle{orangechapter}
+
+% Headers
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[LE,RO]{\thepage}
+\fancyhead[LO]{\rightmark}
+\fancyhead[RE]{\leftmark}
+
+% Orange boxes for emphasis
+\newenvironment{orangebox}
+  {\begin{framed}\color{darkorange}}
+  {\end{framed}}
+
+% Title page
+\def\booktitle{$book_title$}
+\def\bookauthor{$author$}
+\def\bookdate{$date$}
+
+\begin{document}
+
+% Title page with orange bar
+\thispagestyle{empty}
+\begin{center}
+\begin{minipage}{\textheight}
+\vfill
+\vspace{2in}
+{\Huge\scshape\booktitle\par}
+\vspace{0.5in}
+{\LARGE by \bookauthor\par}
+\vspace{2in}
+\vfill
+\end{minipage}
+\end{center}
+
+% Copyright
+\clearpage
+\thispagestyle{empty}
+\vspace*{\fill}
+\begin{center}
+Copyright \textcopyright\ \bookdate\ \bookauthor\\
+All rights reserved.
+\end{center}
+\vspace*{\fill}
+
+% Contents
+\clearpage
+\tableofcontents
+
+$body$
+
+\end{document}

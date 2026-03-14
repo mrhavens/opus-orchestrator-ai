@@ -1,0 +1,149 @@
+% University Press Style - Academic Publishing
+% Similar to Cambridge, Oxford, Princeton University Press
+
+\documentclass[12pt]{book}
+
+% Packages
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{geometry}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{titlesec}
+
+% University Press trim (slightly larger)
+\geometry{
+  paperwidth=6in,
+  paperheight=9in,
+  textwidth=4in,
+  textheight=7in,
+  inner=1in,
+  outer=0.75in,
+  top=1in,
+  bottom=1in,
+}
+
+% Hyperref
+\hypersetup{
+  colorlinks=true,
+  linkcolor=black,
+  citecolor=black,
+  urlcolor=black,
+}
+
+% Fonts - classic serif
+\usepackage{mathptmx}
+\usepackage[T1]{url}
+
+% Chapter headings - centered, plain
+\chapterstyle{default}
+
+\titleformat{\chapter}[display]
+  {\centering\normalfont\LARGE\bfseries}
+  {\MakeUppercase{\chaptertitlename}\ \thechapter}
+  {1ex}
+  {\centering\normalfont\LARGE\bfseries}
+  []
+
+\titleformat{\section}
+  {\normalfont\large\bfseries}
+  {\thesection}
+  {1em}
+  {}
+
+\titleformat{\subsection}
+  {\normalfont\normalsize\bfseries}
+  {\thesubsection}
+  {1em}
+  {}
+
+% Headers - plain with centered text
+\pagestyle{plain}
+\makeatletter
+\let\@mkboth\@gobbletwo
+\makeatother
+
+% Small caps for headers
+\fancyhead[CE]{\scshape\leftmark}
+\fancyhead[CO]{\scshape\rightmark}
+\fancyfoot[C]{\thepage}
+
+% Title page - formal
+\def\booktitle{$book_title$}
+\def\bookauthor{$author$}
+\def\bookdate{$date$}
+\def\bookpublisher{$publisher$}
+
+\begin{document}
+
+% Half title (verso)
+\thispagestyle{empty}
+\null\vfill
+\begin{center}
+{\Huge\scshape\booktitle}
+\end{center}
+\vfill\null
+
+% Title page (recto)
+\clearpage
+\thispagestyle{empty}
+\begin{center}
+\vspace*{1.5in}
+{\Huge\scshape\booktitle\par}
+\vspace{1in}
+\bigskip
+{\large\scshape by \bookauthor\par}
+\vfill
+{\large\scshape\bookpublisher}\\
+\scshape\bookdate
+\end{center}
+
+% Copyright
+\clearpage
+\thispagestyle{empty}
+\null\vfill
+\begin{center}
+\textcopyright\ \bookdate\ \bookauthor\\
+\bigskip
+All rights reserved. No part of this book may be reproduced\\
+in any form without written permission.
+\vfill
+ISBN: $isbn$
+\end{center}
+\vfill\null
+
+% Dedication
+$if(dedication)$
+\clearpage
+\thispagestyle{empty}
+\null\vfill
+\begin{center}
+\textit{$dedication$}
+\end{center}
+\vfill\null
+$endif$
+
+% Contents
+\clearpage
+\tableofcontents
+
+% Figures/Tables
+\listoffigures
+\listoftables
+
+% Main text
+\mainmatter
+
+$body$
+
+% Bibliography
+\backmatter
+
+% Index (if needed)
+% \printindex
+
+\end{document}

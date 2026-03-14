@@ -1,0 +1,105 @@
+% Classicthesis - Typographic Style for LaTeX 2e
+% http://www.miede.de/
+% Contributed by André Miede and Ivo Plate
+% Classicthesis version 4.6
+
+% NOTE: This is a port of the Classic Thesis LaTeX package
+% Original: http://www.miede.de/
+
+\ProvidesPackage{classicthesis}
+ [2018/03/20 v4.6 Typographic Style for LaTeX 2e]
+
+% Packages
+\RequirePackage{ifthen}
+\RequirePackage{ifpdf}
+\RequirePackage[nochapters]{classicthesis-ldpkg}
+
+% Options
+\DeclareOption{parts}{\ct@parttrue}
+\DeclareOption{chapters}{\ct@chaptertrue}
+\DeclareOption{titlepages}{\ct@titlepagetrue}
+
+\ExecuteOptions{parts}
+\ProcessOptions\relax
+
+% Adjust margins for KDP
+\geometry{
+  paperwidth=5.5in,
+  paperheight=8.5in,
+  inner=0.6in,
+  outer=0.4in,
+  bindingoffset=0.25in,
+}
+
+% ===== CONFIG =====
+
+% Minion/MathTime fonts (comment out if not available)
+% \RequirePackage{MinionPro}
+% \RequirePackage{mathptmx}
+
+% Use microtype
+\RequirePackage{microtype}
+\microtypesetup{tracking=true,protrusion=true}
+
+% Colors
+\colorlet{chaptercolor}{black}
+\colorlet{sectioncolor}{black}
+\colorlet{captioncolor}{gray}
+
+% Chapter styling
+\def\chapterstyle[#1]{%
+  \titleformat{\chapter}[block]%
+    {\raggedright\spacedallcaps}%
+    {{\color{chaptercolor}\thechapter|||#1}}%
+    {0pt}%
+    {\raggedright\spacedallcaps}%
+    [\normalsize\vhuzz@chapter Raphael]%
+
+% Section styling  
+\def\sectionstyle{%
+  \titleformat{\section}[runin]%
+    {\color{sectioncolor}\normalfont\bfseries}%
+    {\color{sectioncolor}\thesection}%
+    {0.5em}%
+    {\color{sectioncolor}\normalfont\bfseries}%
+}
+
+% Subsection styling
+\def\subsectionstyle{%
+  \titleformat{\subsection}[runin]%
+    {\color{sectioncolor}\normalfont}%
+    {\color{sectioncolor}\thesubsection}%
+    {0.5em}%
+    {\color{sectioncolor}\normalfont}%
+}
+
+% Headers
+\RequirePackage{fancyhdr}
+\fancyhf{}
+\fancyhead[RO]{\normalfont\thepage}
+\fancyhead[LE]{\normalfont\thepage}
+\fancyhead[RE]{\normalfont\scshape\leftmark}
+\fancyhead[LO]{\normalfont\scshape\rightmark}
+\pagestyle{fancy}
+
+% Quotes
+\RequirePackage{epigraph}
+\newcommand{\epigraphmargin}{\vhuzzatargetskip}
+\epigraphwidth=0.5\textwidth
+
+% Dedication
+\newcommand{\dedication}[1]{%
+  \thispagestyle{empty}
+  \null\vfill%
+  \begin{center}%
+    \textit{#1}%
+  \end{center}%
+  \null\vfill%
+}
+
+% Spacing
+\frenchspacing
+\raggedbottom
+
+% End
+\endinput

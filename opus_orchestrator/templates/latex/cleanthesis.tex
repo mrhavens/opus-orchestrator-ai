@@ -1,0 +1,109 @@
+% Clean Thesis - Minimalist Academic Style
+% Based on "Clean Thesis" LaTeX style
+% http://cleanthesis.der-ric.de/
+
+\documentclass[12pt]{scrbook}
+
+% Packages
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{geometry}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{setspace}
+\usepackage[osf]{mathpazo}
+
+% Clean gray color scheme
+\definecolor{ctColorMain}{RGB}{0,0,0}
+\definecolor{ctColorSec}{RGB}{80,80,80}
+\definecolor{ctColorLight}{RGB}{180,180,180}
+
+% Geometry - comfortable reading
+\geometry{
+  paperwidth=6in,
+  paperheight=9in,
+  textwidth=4.5in,
+  textheight=7in,
+  inner=0.75in,
+  outer=0.75in,
+  top=1in,
+  bottom=1in,
+}
+
+% Hyperref
+\hypersetup{
+  colorlinks=true,
+  linkcolor=ctColorSec,
+  citecolor=ctColorSec,
+  urlcolor=ctColorSec,
+}
+
+% Fonts - clean
+\usepackage[T1]{url}
+
+% Chapter heading
+\usepackage{titlesec}
+\titleformat{\chapter}[display]
+  {\normalfont\Large\bfseries\color{ctColorMain}}
+  {\chaptertitlename\ \thechapter}
+  {20pt}
+  {\Large\bfseries\color{ctColorMain}}
+
+\titleformat{\section}
+  {\normalfont\large\bfseries\color{ctColorSec}}
+  {\thesection}
+  {12pt}
+  {\normalfont\large\bfseries\color{ctColorSec}}
+
+% Headers
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[LE]{\thepage\quad\textcolor{ctColorSec}{\leftmark}}
+\fancyhead[RO]{\textcolor{ctColorSec}{\rightmark}\quad\thepage}
+
+% Spacing
+\onehalfspacing
+
+% Metadata
+\def\booktitle{$book_title$}
+\def\bookauthor{$author$}
+\def\bookdate{$date$}
+
+\begin{document}
+
+% Title page
+\thispagestyle{empty}
+\begin{center}
+\vspace*{2in}
+{\Huge\bfseries\booktitle\par}
+\vspace{1in}
+{\large by \bookauthor\par}
+\vfill
+{\large\bookdate}
+\end{center}
+
+% Copyright
+\clearpage
+\thispagestyle{empty}
+\vspace*{\fill}
+\begin{center}
+\textcolor{ctColorLight}{Copyright \textcopyright\ \bookdate\ \bookauthor}\\
+\textcolor{ctColorLight}{All rights reserved.}
+\end{center}
+\vspace*{\fill}
+
+% Contents
+\clearpage
+\tableofcontents
+
+% Main
+\mainmatter
+
+$body$
+
+\end{document}

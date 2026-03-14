@@ -64,6 +64,12 @@ class LaTeXExporter:
         "textbook": "textbook.tex",        # With exercises
         "journal": "journal.tex",          # Workbooks
         
+        # Popular Templates
+        "classicthesis": "classicthesis.tex",   # Classic typographic
+        "legrand": "legrand.tex",             # Orange book style
+        "cleanthesis": "cleanthesis.tex",      # Minimalist
+        "university-press": "university-press.tex", # Cambridge/Oxford
+        
         # RPG/Game Books
         "rpg-rulebook": "rpg-rulebook.tex",   # Game system
         "rpg-adventure": "rpg-adventure.tex", # Dungeon/Module
