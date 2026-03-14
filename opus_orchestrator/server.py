@@ -283,10 +283,10 @@ async def generate(request: GenerateRequest, background_tasks: BackgroundTasks, 
 
 
 @app.post("/generate/stream", tags=["generate"])
-async def generate_stream(request: GenerateRequest):
+async def generate_stream(request: GenerateRequest, api_key: str = Depends(get_api_key)):
     """Generate a manuscript with streaming progress updates.
     
-    Returns Server-Sent Events (SSE) with progress updates.
+    Returns Server-Sent Events (SSE) with real generation results.
     """
     import traceback
     import json
@@ -314,15 +314,38 @@ async def generate_stream(request: GenerateRequest):
             if not seed_concept:
                 raise HTTPException(status_code=400, detail="Must provide concept or repo")
             
-            # For now, just stream a completion message
-            # Full streaming requires modifying the LangGraph workflow
+            # Call run_opus synchronously and return real result
             yield "data: " + json.dumps({"status": "generating", "progress": 0.1, "message": "Starting generation..."}) + "\n\n"
             
-            # TODO: Implement actual streaming from LangGraph workflow
-            # This requires modifying run_opus to yield progress events
-            yield "data: " + json.dumps({"status": "generating", "progress": 0.5, "message": "Generating manuscript..."}) + "\n\n"
+            result = await run_opus(
+                seed_concept=seed_concept,
+                framework=request.framework,
+                genre=request.genre,
+                target_word_count=request.target_word_count,
+            )
             
-            yield "data: " + json.dumps({"status": "complete", "progress": 1.0, "message": "Generation complete"}) + "\n\n"
+            yield "data: " + json.dumps({"status": "generating", "progress": 0.5, "message": "Processing result..."}) + "\n\n"
+            
+            # Extract manuscript from result
+            if isinstance(result, dict):
+                manuscript = result.get("manuscript", "")
+                if not manuscript:
+                    chapters = result.get("chapters", [])
+                    if chapters:
+                        manuscript = "\n\n---\n\n".join(str(c) for c in chapters)
+                    else:
+                        manuscript = str(result)
+            else:
+                manuscript = str(result)
+            
+            word_count = len(manuscript.split())
+            
+            yield "data: " + json.dumps({
+                "status": "complete",
+                "progress": 1.0,
+                "message": f"Generation complete ({word_count} words)",
+                "manuscript": manuscript
+            }) + "\n\n"
             
         except Exception as e:
             yield "data: " + json.dumps({"status": "error", "message": str(e)}) + "\n\n"
