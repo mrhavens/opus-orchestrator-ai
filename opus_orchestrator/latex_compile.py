@@ -73,6 +73,10 @@ class LaTeXExporter:
         "sci-fi": "sci-fi.tex",             # Orbit/DAW style
         "business": "business.tex",        # Professional
         "minimal": "minimal.tex",           # Bare-bones
+        "romance": "romance.tex",            # Romance novels
+        "thriller": "thriller.tex",          # Mystery/Thriller
+        "koma": "koma.tex",                # KOMA-Script
+        "cookbook": "cookbook.tex",          # Recipes
         
         # RPG/Game Books
         "rpg-rulebook": "rpg-rulebook.tex",   # Game system

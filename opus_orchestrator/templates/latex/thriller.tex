@@ -1,0 +1,98 @@
+% Thriller/Mystery Template
+% Hitchcock, Grisham style
+
+\documentclass[12pt]{memoir}
+
+% Packages
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{geometry}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage{textcomp}
+\usepackage{epigraph}
+
+% Thriller trim
+\geometry{
+  paperwidth=5.5in,
+  paperheight=8.5in,
+  textwidth=4.125in,
+  textheight=7in,
+  inner=0.5in,
+  outer=0.5in,
+}
+
+% Thriller colors
+\definecolor{thrillerred}{RGB}{139,0,0}
+\definecolor{thrillerblack}{RGB}{20,20,20}
+
+% Hyperref
+\hypersetup{
+  colorlinks=false,
+}
+
+% Fonts - sharp
+\usepackage{mathptmx}
+
+% Chapter style - stark
+\chapterstyle{dowding}
+
+% Epigraphs
+\epigraphwidth=3.5in
+
+% Headers
+\pagestyle{simple}
+
+% Part style
+\def\partnamefont{\normalfont\Large\MakeUppercase}
+\def\partnumfont{\normalfont\HUGE\bfseries\color{thrillerred}}
+
+% Metadata
+\def\booktitle{$book_title$}
+\def\bookauthor{$author$}
+\def\bookdate{$date$}
+
+\begin{document}
+
+% Half title
+\thispagestyle{empty}
+{\Huge\scshape\booktitle}
+
+% Title page - stark
+\clearpage
+\thispagestyle{empty}
+\begin{center}
+\vspace*{1in}
+{\HUGE\bfseries\booktitle\par}
+\vfill
+{\Large by \bookauthor}
+\end{center}
+
+% Copyright
+\clearpage
+\thispagestyle{empty}
+\vspace*{\fill}
+\begin{center}
+Copyright \textcopyright\ \bookdate\ \bookauthor\\
+All rights reserved.
+\end{center}
+\vspace*{\fill}
+
+% Epigraph
+$if(epigraph)$
+\clearpage
+\begin{center}
+\textit{$epigraph$}
+\end{center}
+$endif$
+
+% Contents
+\clearpage
+\tableofcontents
+
+$body$
+
+\end{document}

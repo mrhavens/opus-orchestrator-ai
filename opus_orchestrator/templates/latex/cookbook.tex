@@ -1,0 +1,97 @@
+% Cookbook/Food Book Template
+% Recipe books, culinary
+
+\documentclass[12pt]{memoir}
+
+% Packages
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{geometry}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{multicol}
+\usepackage{wrapfig}
+\usepackage{ifthen}
+
+% Cookbook trim
+\geometry{
+  paperwidth=8in,
+  paperheight=10in,
+  textwidth=6in,
+  textheight=8in,
+  inner=0.75in,
+  outer=0.75in,
+}
+
+% Food colors
+\definecolor{basil}{RGB}{34,139,34}
+\definecolor{saffron}{RGB}{244,196,48}
+\definecolor{tomato}{RGB}{255,99,71}
+
+% Hyperref
+\hypersetup{
+  colorlinks=true,
+  linkcolor=basil,
+}
+
+% Fonts
+\usepackage{mathptmx}
+
+% Chapter style
+\chapterstyle{dowding}
+
+% Recipe environment
+\newenvironment{recipe}[1]
+  {\begin{tcolorbox}[title=#1,colback=green!5,colframe=basil]}
+  {\end{tcolorbox}}
+
+% Ingredient list
+\newenvironment{ingredients}
+  {\begin{multicols}{2}\small\textbf{Ingredients:}\begin{itemize}}
+  {\end{itemize}\end{multicols}}
+
+% Instructions
+\newenvironment{instructions}
+  {\small\textbf{Method:}\begin{enumerate}}{\end{enumerate}}
+
+% Metadata
+\def\booktitle{$book_title$}
+\def\bookauthor{$author$}
+\def\bookdate{$date$}
+
+\begin{document}
+
+% Title page
+\thispagestyle{empty}
+\begin{center}
+\vspace*{1in}
+{\Huge\bfseries\booktitle\par}
+\vfill
+{\Large by \bookauthor}\\
+\vfill
+{\large\bookdate}
+\end{center}
+
+% Copyright
+\clearpage
+\thispagestyle{empty}
+\vspace*{\fill}
+\begin{center}
+Copyright \textcopyright\ \bookdate\ \bookauthor\\
+All rights reserved.
+\end{center}
+\vspace*{\fill}
+
+% Contents
+\clearpage
+\tableofcontents
+
+% Introduction
+\chapter{Introduction}
+
+$body$
+
+\end{document}

@@ -1,0 +1,81 @@
+% KOMA-Script Book - Modern LaTeX
+% Alternative to memoir, built into TeX Live
+
+\documentclass[12pt]{scrbook}
+
+% Packages
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{geometry}
+\usepackage{microtype}
+\usepackage{xcolor}
+
+% KOMA settings
+\KOMAoptions{
+  fontsize=12pt,
+  paper=6in:9in,
+  pagesize=pdftex,
+}
+
+% Geometry
+\geometry{
+  inner=0.75in,
+  outer=0.5in,
+  top=0.75in,
+  bottom=0.75in,
+}
+
+% Hyperref
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue,
+}
+
+% Fonts
+\usepackage{mathptmx}
+
+% Chapter styling via KOMA
+\setchapterpreamble{%
+  \itshape\rule{\linewidth}{0.5pt}
+}
+
+% Headers
+\usepackage{scrlayer-scrpage}
+\pagestyle{scrheadings}
+
+% Metadata
+\def\booktitle{$book_title$}
+\def\bookauthor{$author$}
+\def\bookdate{$date$}
+
+\begin{document}
+
+% Title
+\thispagestyle{empty}
+\begin{center}
+\vspace*{2in}
+{\Huge\bfseries\booktitle\par}
+\bigskip
+by \bookauthor
+\vfill
+\bookdate
+\end{center}
+
+% Copyright
+\clearpage
+\thispagestyle{empty}
+\vspace*{\fill}
+Copyright \textcopyright\ \bookdate\ \bookauthor
+\vspace*{\fill}
+
+% Contents
+\tableofcontents
+
+\mainmatter
+
+$body$
+
+\end{document}

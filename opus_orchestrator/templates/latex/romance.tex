@@ -1,0 +1,101 @@
+% Romance Novel Template
+% Harlequin/Mills & Boon style
+
+\documentclass[12pt]{memoir}
+
+% Packages
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{geometry}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage{textcomp}
+
+% Romance trim - compact
+\geometry{
+  paperwidth=5.25in,
+  paperheight=8in,
+  textwidth=4in,
+  textheight=6.5in,
+  inner=0.5in,
+  outer=0.375in,
+  bindingoffset=0.125in,
+}
+
+% Romantic colors
+\definecolor{rose}{RGB}{192,57,43}
+\definecolor{cream}{RGB}{255,251,240}
+\definecolor{gold}{RGB}{218,165,32}
+
+% Hyperref
+\hypersetup{
+  colorlinks=false,
+}
+
+% Fonts - romantic
+\usepackage{mathptmx}
+
+% Chapter style - fancy
+\chapterstyle{dowding}
+
+% Drop caps
+\lettrineHeightLines=3
+\lettrinecolor{rose}
+
+% Headers
+\pagestyle{simple}
+
+% Metadata
+\def\booktitle{$book_title$}
+\def\bookauthor{$author$}
+\def\bookdate{$date$}
+\def\booksynopsis{$synopsis$}
+
+\begin{document}
+
+% Title page - dramatic
+\thispagestyle{empty}
+\begin{center}
+\vspace*{1in}
+{\HUGE\scshape\booktitle\par}
+\vfill
+{\large by \bookauthor}
+\end{center}
+
+% Copyright
+\clearpage
+\thispagestyle{empty}
+\vspace*{\fill}
+\begin{center}
+Copyright \textcopyright\ \bookdate\ \bookauthor\\
+All rights reserved.
+\end{center}
+\vspace*{\fill}
+
+% Dedication
+$if(dedication)$
+\clearpage
+\thispagestyle{empty}
+\vspace*{3in}
+\begin{center}
+\textit{$dedication$}
+\end{center}
+$endif$
+
+% Contents
+\clearpage
+\tableofcontents
+
+$body$
+
+% About the author
+\clearpage
+\chapter*{About the Author}
+
+\bigskip
+\textit{\bookauthor} writes heartwarming romance stories.
+
+\end{document}
