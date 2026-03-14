@@ -142,4 +142,7 @@ __all__ = [
     "RetryHandler",
     "CircuitBreaker",
     "with_retry",
+    # Scrivener Export
+    "ScrivenerExporter",
+    "export_to_scrivener",
 ]
