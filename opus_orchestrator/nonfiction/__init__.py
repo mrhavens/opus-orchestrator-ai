@@ -7,6 +7,7 @@ Key components:
 - critique_criteria: Purpose-specific evaluation criteria
 - expanded_frameworks: 35+ expert-level frameworks
 - research_integration: Connect research agent to pipeline
+- textbook_frameworks: Educational/academic frameworks
 """
 
 from opus_orchestrator.nonfiction.classifier import (
@@ -48,6 +49,11 @@ from opus_orchestrator.nonfiction.research_integration import (
     ResearchResult,
     get_research_config_for_purpose,
 )
+from opus_orchestrator.nonfiction.textbook_frameworks import (
+    TEXTBOOK_FRAMEWORKS,
+    get_textbook_frameworks,
+    suggest_textbook_framework,
+)
 
 __all__ = [
     # Classifier
@@ -83,4 +89,8 @@ __all__ = [
     "ResearchRequest",
     "ResearchResult",
     "get_research_config_for_purpose",
+    # Textbook Frameworks
+    "TEXTBOOK_FRAMEWORKS",
+    "get_textbook_frameworks",
+    "suggest_textbook_framework",
 ]
