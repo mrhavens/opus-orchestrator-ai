@@ -1,0 +1,111 @@
+% Opus Orchestrator - KDP Trade Paperback Template
+% Optimized for Amazon KDP 5.5x8.5
+
+\documentclass[12pt]{memoir}
+
+% Packages
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{geometry}
+\usepackage{microtype}
+\usepackage{textcomp}
+\usepackage{color}
+
+% KDP Trim Size: 5.5 x 8.5 inches
+\geometry{
+  papersize={5.5in,8.5in},
+  textwidth=4.5in,
+  textheight=7in,
+  inner=0.5in,
+  outer=0.5in,
+  top=0.5in,
+  bottom=0.5in,
+  bindingoffset=0.25in,
+}
+
+% Bleed (for KDP)
+\usepackage[cam,center]{crop}
+
+% Microtype
+\microtypesetup{protrusion=true}
+
+% Hyperref
+\hypersetup{
+  colorlinks=false,
+  pdfborder={0 0 0},
+  pdfcreator={Opus Orchestrator},
+  pdfproducer={Opus Orchestrator},
+}
+
+% Fonts
+\usepackage{mathptmx}
+\usepackage[T1]{url}
+
+% Chapter style
+\chapterstyle{dowding}
+
+% Headers
+\pagestyle{plain}
+\makeevenfoot{plain}{\thepage}{}{}
+\makeoddfoot{plain}{}{}{\thepage}
+
+% Metadata
+\def\booktitle{$book_title$}
+\def\bookauthor{$author$}
+\def\bookdate{$date$}
+\def\bookpublisher{$publisher$}
+\def\bookisbn{$isbn$}
+
+\begin{document}
+
+% Half title
+\thispagestyle{empty}
+\vspace*{2in}
+{\Huge\scshape\booktitle\par}
+
+% Title page
+\clearpage
+\thispagestyle{empty}
+\vspace*{1in}
+\begin{center}
+{\Huge\scshape\booktitle\par}
+\vspace{1in}
+{\Large\scshape\bookauthor\par}
+\vfill
+{\large\scshape\bookpublisher}\\
+{\scshape\bookdate}
+\end{center}
+
+% Copyright
+\clearpage
+\thispagestyle{empty}
+\vspace*{\fill}
+\begin{center}
+Copyright \textcopyright\ \bookdate\ \bookauthor\\
+\bigskip
+All rights reserved.\\
+\bigskip
+ISBN: $isbn$}
+\end{center}
+\vspace*{\fill}
+
+% Dedication
+$if(dedication)$
+\clearpage
+\thispagestyle{empty}
+\vspace*{3in}
+\begin{center}
+\textit{$dedication$}
+\end{center}
+$endif$
+
+% Contents
+\clearpage
+\tableofcontents
+
+$body$
+
+\end{document}

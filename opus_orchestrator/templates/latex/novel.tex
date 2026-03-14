@@ -1,0 +1,130 @@
+% Opus Orchestrator - Novel Template
+% Fiction, general purpose
+
+\documentclass[12pt,ebook]{memoir}
+
+% Packages
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{geometry}
+\usepackage{microtype}
+\usepackage{lettrine}
+\usepackage{textcomp}
+
+% Geometry - standard novel
+\geometry{
+  paperwidth=5.5in,
+  paperheight=8.5in,
+  textwidth=4in,
+  textheight=7in,
+  inner=0.75in,
+  outer=0.5in,
+  top=0.75in,
+  bottom=0.75in,
+  bindingoffset=0.125in,
+}
+
+% Microtype
+\microtypesetup{protrusion=true,tracking=true}
+
+% Hyperref
+\hypersetup{
+  colorlinks=false,
+  pdfborder={0 0 0},
+}
+
+% Chapter style - elegant
+\chapterstyle{dowding}
+\setsecnumdepth{none}
+
+% Drop caps
+\lettrinefont{LH}
+\def\LettrineTextFont{\itshape}
+
+% Fonts
+\usepackage{mathptmx}  % Times
+\usepackage[T1]{url}
+
+% Headers
+\nouppercaseheads
+\makepagestyle{novel}
+\makepsmarks{novel}{
+  \nouppercase\markboth{\rightmark}{\leftmark}}
+\pagestyle{novel}
+
+% Epigraphs
+\usepackage{epigraph}
+\epigraphwidth=3.5in
+\epigraphrule=0pt
+
+% Metadata
+\def\booktitle{$book_title$}
+\def\bookauthor{$author$}
+\def\bookdate{$date$}
+\def\bookpublisher{$publisher$}
+
+\begin{document}
+
+% Half title (verso)
+\thispagestyle{empty}
+\pdfbookmark{Half Title}{half}
+\vspace*{2in}
+\begin{raggedright}
+\HUGE\scshape\booktitle
+\end{raggedright}
+
+% Title page (recto)
+\clearpage
+\thispagestyle{empty}
+\vspace*{1in}
+\begin{center}
+\HUGE\scshape\booktitle\par
+\vspace{1.5in}
+\Large\scshape\bookauthor\par
+\vfill
+\large\scshape\bookpublisher\\
+\normalsize\scshape\bookdate
+\end{center}
+
+% Copyright
+\clearpage
+\thispagestyle{empty}
+\vspace*{\fill}
+\begin{center}
+Copyright \textcopyright\ \bookdate\ \bookauthor\\
+All rights reserved.\\
+ISBN: $isbn$
+\end{center}
+\vspace*{\fill}
+
+% Dedication
+$if(dedication)$
+\clearpage
+\thispagestyle{empty}
+\vspace*{3in}
+\begin{center}
+\textit{$dedication$}
+\end{center}
+$endif$
+
+% Epigraph
+$if(epigraph)$
+\clearpage
+\begin{center}
+\textit{$epigraph$}
+\end{center}
+$endif$
+
+% Contents
+\clearpage
+\pdfbookmark{Contents}{toc}
+\tableofcontents*
+
+\mainmatter
+
+$body$
+
+\end{document}

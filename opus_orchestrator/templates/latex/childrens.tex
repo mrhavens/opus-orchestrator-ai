@@ -1,0 +1,76 @@
+% Opus Orchestrator - Children's Book Template
+% Picture books, illustrated books
+
+\documentclass[14pt]{memoir}
+
+% Packages
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{geometry}
+\usepackage{color}
+\usepackage{wrapfig}
+
+% Picture book trim (standard)
+\geometry{
+  paperwidth=8in,
+  paperheight=10in,
+  textwidth=6.5in,
+  textheight=8in,
+  inner=0.75in,
+  outer=0.75in,
+}
+
+% Hyperref
+\hypersetup{colorlinks=false}
+
+% Large readable fonts
+\usepackage{gentium}
+\usepackage{mathpazo}
+
+% Chapter style
+\chapterstyle{article}
+
+% Metadata
+\def\booktitle{$book_title$}
+\def\bookauthor{$author$}
+\def\bookdate{$date$}
+
+\begin{document}
+
+% Title page
+\thispagestyle{empty}
+\begin{center}
+\vspace*{1in}
+{\Huge\bfseries\booktitle\par}
+\vspace{2in}
+{\Large by \bookauthor\par}
+\vfill
+{\large\bookdate}
+\end{center}
+
+% Copyright
+\clearpage
+\thispagestyle{empty}
+\vspace*{\fill}
+\begin{center}
+Copyright \textcopyright\ \bookdate\ \bookauthor\\
+All rights reserved.
+\end{center}
+\vspace*{\fill}
+
+% Story pages
+\mainmatter
+
+$body$
+
+% About the author
+\clearpage
+\section*{About the Author}
+\addcontentsline{toc}{section}{About the Author}
+
+\bigskip
+\textit{The author writes from their home.}\\
+
+\end{document}

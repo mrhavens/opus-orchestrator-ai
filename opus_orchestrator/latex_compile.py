@@ -45,9 +45,14 @@ class LaTeXExporter:
     """Export manuscript to LaTeX and compile to PDF."""
     
     TEMPLATES = {
-        "memoir": "memoir.tex",
-        "academic": "academic.tex",
-        "base": "base.tex",
+        "novel": "novel.tex",           # General fiction
+        "memoir": "memoir.tex",         # Memoir/personal narrative
+        "kdp-trade": "kdp-trade.tex",  # KDP 5.5x8.5
+        "academic": "academic.tex",      # Academic/technical
+        "textbook": "textbook.tex",     # Textbook with exercises
+        "poetry": "poetry.tex",         # Poetry collections
+        "childrens": "childrens.tex",   # Picture books
+        "base": "base.tex",             # Basic template
     }
     
     def __init__(self, template_dir: Optional[str] = None):
