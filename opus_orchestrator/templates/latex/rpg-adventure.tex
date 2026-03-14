@@ -1,0 +1,145 @@
+% Opus Orchestrator - RPG Adventure/Module Template
+% Dungeon, campaign, one-shot adventures
+
+\documentclass[12pt]{memoir}
+
+% Packages
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{geometry}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{multicol}
+\usepackage{tcolorbox}
+\usepackage{ifthen}
+\usepackage{pdflscape}
+
+% Adventure trim (letter for tables/maps)
+\geometry{
+  paperwidth=8.5in,
+  paperheight=11in,
+  textwidth=6.5in,
+  textheight=9in,
+}
+
+% Hyperref
+\hypersetup{
+  colorlinks=true,
+  linkcolor=darkred,
+}
+
+% Fonts
+\usepackage{mathptmx}
+
+% Chapter style
+\chapterstyle{dowding}
+
+% Sidebar box
+\newtcolorbox{sidebar}[1][]{
+  colback=yellow!20,
+  colframe=orange!75!black,
+  title=#1,
+  fonttitle=\bfseries,
+  parbox=false,
+}
+
+% Monster stat block
+\newtcolorbox{monster}[1][]{
+  colback=green!5,
+  colframe=green!75!black,
+  title=#1,
+  fonttitle=\bfseries,
+  fontupper=\small,
+}
+
+% Treasure/hazard box
+\newtcolorbox{treasure}[]{
+  colback=gold!20,
+  colframe=gold!75!black,
+}
+
+% Encounter box
+\newtcolorbox{encounter}[1][]{
+  colback=red!10,
+  colframe=red!75!black,
+  title=#1,
+}
+
+% Map placeholder
+\newcommand{\mapplaceholder}[1]{%
+  \begin{center}
+  \framebox{#1}
+  \textit{[Map Placeholder - #1]}
+  \end{center}
+}
+
+% Landscape tables
+\newenvironment{landscape-table}
+  {\begin{landscape}\begin{multicols}{2}}
+  {\end{multicols}\end{landscape}}
+
+% Metadata
+\def\booktitle{$book_title$}
+\def\bookauthor{$author$}
+\def\bookdate{$date$}
+\def\booklevel{Levels 1-4}
+\def\bookenv{Tropical}
+
+\begin{document}
+
+% Title page
+\thispagestyle{empty}
+\begin{center}
+\vspace*{0.5in}
+{\Huge\bfseries\booktitle\par}
+\vspace{0.5in}
+{\Large An Adventure for \booklevel\par}
+\vspace{0.5in}
+{\large by \bookauthor\par}
+\vfill
+{\large\bookenv}
+\end{center}
+
+% Back of title - stats
+\clearpage
+\thispagestyle{empty}
+\begin{tcolorbox}[title=Adventure Summary]
+\textbf{Genre:} Fantasy\\
+\textbf{Level:} \booklevel\\
+\textbf{Setting:} \bookenv\\
+\textbf{Time:} 4-6 hours
+\end{tcolorbox}
+
+% Copyright
+\clearpage
+\thispagestyle{empty}
+\vspace*{\fill}
+\begin{center}
+Copyright \textcopyright\ \bookdate\ \bookauthor\\
+All rights reserved.
+\end{center}
+\vspace*{\fill}
+
+% Table of Contents
+\clearpage
+\tableofcontents
+
+% Adventure content
+\mainmatter
+
+$body$
+
+% Appendix reference
+\clearpage
+\chapter*{Appendix A: NPCs}
+\addcontentsline{toc}{chapter}{Appendix A: NPCs}
+
+\clearpage
+\chapter*{Appendix B: Maps}
+\addcontentsline{toc}{chapter}{Appendix B: Maps}
+
+\end{document}

@@ -1,0 +1,99 @@
+% Opus Orchestrator - CYOA/Interactive Fiction Template
+% Choose Your Own Adventure, gamebooks
+
+\documentclass[12pt]{memoir}
+
+% Packages
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{geometry}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage{tcolorbox}
+\usepackage{ifthen}
+\usepackage{enumitem}
+
+% Compact trim
+\geometry{
+  paperwidth=5.5in,
+  paperheight=8.5in,
+  textwidth=4in,
+  textheight=7in,
+  inner=0.5in,
+  outer=0.5in,
+}
+
+% Hyperref
+\hypersetup{
+  colorlinks=false,
+}
+
+% Fonts
+\usepackage{mathptmx}
+
+% Chapter style
+\chapterstyle{dowding}
+
+% Choice box
+\newtcolorbox{choicebox}[1][]{
+  colback=blue!10,
+  colframe=blue!75!black,
+  title=#1,
+  fonttitle=\bfseries,
+  parbox=false,
+}
+
+% Page reference
+\newtcolorbox{refbox}[]{
+  colback=yellow!20,
+  colframe=yellow!75!black,
+  fonttitle=\bfseries,
+}
+
+% Adventure choice
+\newenvironment{choice}
+  {\begin{choicebox}{Choose Your Path}}
+  {\end{choicebox}}
+
+% Metadata
+\def\booktitle{$book_title$}
+\def\bookauthor{$author$}
+\def\bookdate{$date$}
+
+\begin{document}
+
+% Title page
+\thispagestyle{empty}
+\begin{center}
+\vspace*{1in}
+{\Huge\bfseries\booktitle\par}
+\vspace{1in}
+{\Large by \bookauthor\par}
+\vfill
+{\large\bookdate}
+\end{center}
+
+% Copyright
+\clearpage
+\thispagestyle{empty}
+\vspace*{\fill}
+\begin{center}
+Copyright \textcopyright\ \bookdate\ \bookauthor\\
+All rights reserved.
+\end{center}
+\vspace*{\fill}
+
+% Start
+\clearpage
+\chapter*{Prologue}
+\addcontentsline{toc}{chapter}{Prologue}
+
+$body$
+
+% Endings section
+\clearpage
+\chapter*{Endings}
+
+\end{document}

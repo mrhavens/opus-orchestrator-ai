@@ -53,22 +53,27 @@ class LaTeXExporter:
         "kdp-large": "kdp-large.tex",      # 8.5x11 workbook
         
         # Book Types
-        "novel": "novel.tex",              # General fiction
-        "memoir": "memoir.tex",           # Memoir/personal
-        "hardcover": "hardcover.tex",      # Premium hardcover
-        "poetry": "poetry.tex",           # Poetry collections
-        "childrens": "childrens.tex",     # Picture books
+        "novel": "novel.tex",              # Fiction
+        "memoir": "memoir.tex",            # Personal narrative
+        "hardcover": "hardcover.tex",      # Premium
+        "poetry": "poetry.tex",            # Poetry
+        "childrens": "childrens.tex",      # Picture books
         
         # Technical/Educational
-        "academic": "academic.tex",        # Academic papers
-        "textbook": "textbook.tex",       # With exercises
-        "journal": "journal.tex",          # Workbooks/planners
+        "academic": "academic.tex",       # Papers
+        "textbook": "textbook.tex",        # With exercises
+        "journal": "journal.tex",          # Workbooks
+        
+        # RPG/Game Books
+        "rpg-rulebook": "rpg-rulebook.tex",   # Game system
+        "rpg-adventure": "rpg-adventure.tex", # Dungeon/Module
+        "cyoa": "cyoa.tex",                  # Choose Your Own Adventure
         
         # Specialty
-        "screenplay": "screenplay.tex",   # Film/TV scripts
+        "screenplay": "screenplay.tex",     # Film/TV
         
         # Base
-        "base": "base.tex",               # Minimal template
+        "base": "base.tex",                # Minimal
     }
     
     def __init__(self, template_dir: Optional[str] = None):

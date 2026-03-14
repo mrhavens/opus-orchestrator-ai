@@ -1,0 +1,132 @@
+% Opus Orchestrator - RPG Rulebook Template
+% Dungeons & Dragons, Pathfinder, generic RPG
+
+\documentclass[12pt]{memoir}
+
+% Packages
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{geometry}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{multicol}
+\usepackage{tcolorbox}
+\usepackage{ifthen}
+
+% Standard RPG trim
+\geometry{
+  paperwidth=8.5in,
+  paperheight=11in,
+  textwidth=6.5in,
+  textheight=9in,
+  left=1in,
+  right=1in,
+  top=1in,
+  bottom=1in,
+}
+
+% Hyperref
+\hypersetup{
+  colorlinks=true,
+  linkcolor=darkred,
+  urlcolor=darkblue,
+}
+
+% Fonts
+\usepackage{mathptmx}
+\usepackage[T1]{url}
+
+% Chapter style
+\chapterstyle{dowding}
+
+% Colored sections
+\tcbset{
+  ruleboxstyle/.style={
+    colback=red!10,
+    colframe=red!50!black,
+    fonttitle=\bfseries,
+  },
+}
+
+% Stat block box
+\newtcolorbox{statbox}[1][]{
+  colback=blue!5,
+  colframe=blue!75!black,
+  title=#1,
+  fonttitle=\bfseries,
+}
+
+% Monster stat block
+\newtcolorbox{monsterstat}[1][]{
+  colback=green!5,
+  colframe=green!75!black,
+  title=#1,
+  fonttitle=\bfseries,
+}
+
+% Two-column for stats
+\usepackage{multicol}
+\def\columnseprulecolor{\color{gray}}
+
+% Metadata
+\def\booktitle{$book_title$}
+\def\bookauthor{$author$}
+\def\bookdate{$date$}
+\def\bookversion{$version$}
+
+\begin{document}
+
+% Title page
+\thispagestyle{empty}
+\begin{center}
+\vspace*{1in}
+{\Huge\bfseries\booktitle\par}
+\vspace{0.5in}
+{\Large\scshape A Roleplaying Game\par}
+\vspace{1in}
+{\Large by \bookauthor\par}
+\vfill
+{\large\bookdate\\
+Version \bookversion}
+\end{center}
+
+% Copyright
+\clearpage
+\thispagestyle{empty}
+\vspace*{\fill}
+\begin{center}
+Copyright \textcopyright\ \bookdate\ \bookauthor\\
+All rights reserved.\\
+\bigskip
+This is a fictional work. Any resemblance to actual persons, living or dead, is coincidental.
+\end{center}
+\vspace*{\fill}
+
+% Table of Contents
+\clearpage
+\tableofcontents
+
+% Interior
+\mainmatter
+
+$body$
+
+% Back cover copy (optional)
+\clearpage
+\thispagestyle{empty}
+\begin{center}
+\vspace*{2in}
+{\Large\bfseries\booktitle}\\
+\vspace{1in}
+{\normalsize
+\textit{An official publication for the ... game system.}}\\
+\vfill
+{\small
+Consult your local game store or retailer for dice, maps, and accessories.}
+\end{center}
+
+\end{document}
