@@ -103,6 +103,17 @@ def __getattr__(name: str):
         from opus_orchestrator.utils.retry import with_retry
         return with_retry
     
+    # Scrivener Export
+    if name == "ScrivenerExporter":
+        from opus_orchestrator.scrivener_export import ScrivenerExporter
+        return ScrivenerExporter
+    if name == "export_to_scrivener":
+        from opus_orchestrator.scrivener_export import export_to_scrivener
+        return export_to_scrivener
+    if name == "ExportOptions":
+        from opus_orchestrator.scrivener_export import ExportOptions
+        return ExportOptions
+    
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
@@ -145,4 +156,6 @@ __all__ = [
     # Scrivener Export
     "ScrivenerExporter",
     "export_to_scrivener",
+    "ExportOptions",
+    "ExportOptions",
 ]

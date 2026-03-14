@@ -1,15 +1,34 @@
 """Scrivener-style output for Opus Orchestrator.
 
 Generates chapter-by-chapter output with binder.json metadata.
+Supports auto-branching and push to GitHub.
 """
 
 import json
 import re
+import subprocess
 from pathlib import Path
 from typing import Optional
 from dataclasses import dataclass, asdict
+from datetime import datetime
 
 from opus_orchestrator.schemas import Manuscript, Chapter
+
+
+@dataclass
+class ExportOptions:
+    """Options for Scrivener export."""
+    output_dir: str = "./output"
+    split_chapters: bool = True
+    branch: str = "draft/generated"
+    push_to_remote: bool = False
+    commit_message: str = ""
+    author_name: str = "Opus Orchestrator"
+    author_email: str = "opus@clowder.net"
+    
+    def __post_init__(self):
+        if not self.commit_message:
+            self.commit_message = f"Auto-export: {datetime.now().strftime('%Y-%m-%d %H:%M')}"
 
 
 @dataclass
@@ -50,19 +69,44 @@ class ScrivenerExporter:
         self,
         manuscript: Manuscript,
         book_title: str,
-        split_chapters: bool = True,
+        options: Optional[ExportOptions] = None,
     ) -> dict:
         """Export manuscript to Scrivener-style structure.
         
         Args:
             manuscript: The Manuscript to export
             book_title: Title for the book folder
-            split_chapters: If True, split into individual files
+            options: ExportOptions (optional)
             
         Returns:
             Export metadata with file paths and word counts
         """
+        opts = options or ExportOptions(
+            output_dir=opts.output_dir if options else "./output",
+            split_chapters=options.split_chapters if options else True,
+        )
+        
         # Create book folder
+        book_folder = self.output_dir / self._slugify(book_title)
+        book_folder.mkdir(parents=True, exist_ok=True)
+        
+        if opts.split_chapters:
+            result = self._export_split(manuscript, book_folder, book_title)
+        else:
+            result = self._export_single(manuscript, book_folder, book_title)
+        
+        # Optionally push to GitHub
+        if opts.push_to_remote:
+            push_result = self._push_to_git(
+                book_folder,
+                opts.branch,
+                opts.commit_message,
+                opts.author_name,
+                opts.author_email,
+            )
+            result.update(push_result)
+        
+        return result
         book_folder = self.output_dir / self._slugify(book_title)
         book_folder.mkdir(parents=True, exist_ok=True)
         
@@ -232,11 +276,101 @@ word_count: {word_count}
         return slug.strip('-')
 
 
+    def _push_to_git(
+        self,
+        folder: Path,
+        branch: str,
+        commit_message: str,
+        author_name: str,
+        author_email: str,
+    ) -> dict:
+        """Push exported folder to GitHub.
+        
+        Args:
+            folder: Folder to push
+            branch: Branch name (will be created if doesn't exist)
+            commit_message: Commit message
+            author_name: Git author name
+            author_email: Git author email
+            
+        Returns:
+            Push result metadata
+        """
+        import subprocess
+        
+        # Check if git repo exists
+        git_dir = folder / ".git"
+        if not git_dir.exists():
+            # Initialize new repo
+            subprocess.run(["git", "init"], cwd=folder, check=True, capture_output=True)
+            subprocess.run(["git", "config", "user.email", author_email], cwd=folder, check=True, capture_output=True)
+            subprocess.run(["git", "config", "user.name", author_name], cwd=folder, check=True, capture_output=True)
+        
+        # Add all files
+        subprocess.run(["git", "add", "."], cwd=folder, check=True, capture_output=True)
+        
+        # Check if there are changes
+        result = subprocess.run(
+            ["git", "status", "--porcelain"],
+            cwd=folder,
+            capture_output=True,
+            text=True
+        )
+        
+        if not result.stdout.strip():
+            return {"pushed": False, "reason": "No changes to commit"}
+        
+        # Commit
+        subprocess.run(
+            ["git", "commit", "-m", commit_message],
+            cwd=folder,
+            check=True,
+            capture_output=True
+        )
+        
+        # Get or add remote
+        remotes = subprocess.run(
+            ["git", "remote", "-v"],
+            cwd=folder,
+            capture_output=True,
+            text=True
+        )
+        
+        if not remotes.stdout.strip():
+            # No remote set - can't push
+            return {
+                "pushed": False, 
+                "reason": "No remote configured. Add one with: git remote add origin <url>"
+            }
+        
+        # Push to branch
+        try:
+            subprocess.run(
+                ["git", "push", "-u", "origin", branch, "--no-verify"],
+                cwd=folder,
+                check=True,
+                capture_output=True
+            )
+            return {
+                "pushed": True,
+                "branch": branch,
+                "commit_message": commit_message,
+            }
+        except subprocess.CalledProcessError as e:
+            return {
+                "pushed": False,
+                "reason": f"Push failed: {e.stderr.decode() if e.stderr else str(e)}"
+            }
+
+
 def export_to_scrivener(
     manuscript: Manuscript,
     book_title: str,
     output_dir: str = "./output",
     split_chapters: bool = True,
+    branch: str = "draft/generated",
+    push_to_remote: bool = False,
+    commit_message: str = "",
 ) -> dict:
     """Convenience function to export in Scrivener style.
     
@@ -245,9 +379,20 @@ def export_to_scrivener(
         book_title: Title for the book
         output_dir: Output directory
         split_chapters: Split into individual chapter files
+        branch: Branch to push to (default: draft/generated)
+        push_to_remote: Whether to push to GitHub remote
+        commit_message: Custom commit message
         
     Returns:
         Export metadata
     """
+    options = ExportOptions(
+        output_dir=output_dir,
+        split_chapters=split_chapters,
+        branch=branch,
+        push_to_remote=push_to_remote,
+        commit_message=commit_message,
+    )
+    
     exporter = ScrivenerExporter(output_dir)
-    return exporter.export(manuscript, book_title, split_chapters)
+    return exporter.export(manuscript, book_title, options)
