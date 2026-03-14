@@ -24,7 +24,7 @@ class FortressConfig(BaseModel):
 class AgentConfig(BaseModel):
     """Configuration for AI agents."""
 
-    model: str = Field(default="MiniMax/MiniMax-M2.1", description="Default model for agents")
+    model: str = Field(default="MiniMax/MiniMax-M2.5", description="Default model for agents")
     temperature: float = Field(default=0.7, ge=0.0, le=2.0)
     max_tokens: Optional[int] = Field(default=None, description="Max tokens per response")
     max_iterations: int = Field(default=10, description="Max iterations per agent task")
@@ -112,11 +112,11 @@ def load_config_from_env() -> OpusConfig:
     # Use MiniMax only
     if minimax_key:
         provider = "minimax"
-        default_model = "MiniMax/MiniMax-M2.1"
+        default_model = "MiniMax/MiniMax-M2.5"
         api_key = minimax_key
     else:
         provider = "minimax"
-        default_model = "MiniMax/MiniMax-M2.1"
+        default_model = "MiniMax/MiniMax-M2.5"
         api_key = None
     
     github_token = _load_env("GITHUB_TOKEN")
