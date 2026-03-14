@@ -1,0 +1,61 @@
+# Opus Orchestrator API
+# k3s Helm Chart
+
+## Install
+
+```bash
+# Add helm repo
+helm repo add opus-orchestrator https://mrhavens.github.io/opus-orchestrator
+
+# Install
+helm install opus opus-orchestrator/opus-orchestrator \
+  --set api.minimaxApiKey=your_key \
+  --set api.githubToken=your_token
+```
+
+## Values
+
+```yaml
+api:
+  replicaCount: 1
+  
+  image:
+    repository: ghcr.io/mrhavens/opus-orchestrator
+    tag: latest
+    
+  service:
+    type: ClusterIP
+    port: 8000
+    
+  env:
+    MINIMAX_API_KEY: ""
+    GITHUB_TOKEN: ""
+    LOG_LEVEL: "INFO"
+    
+resources:
+  limits:
+    cpu: 2000m
+    memory: 2Gi
+  requests:
+    cpu: 500m
+    memory: 512Mi
+
+ingress:
+  enabled: true
+  className: nginx
+  hosts:
+    - host: opus.internal
+      paths:
+        - path: /
+          pathType: Prefix
+```
+
+## Deploy
+
+```bash
+# Create namespace
+kubectl create namespace opus
+
+# Deploy
+kubectl apply -f values.yaml -n opus
+```

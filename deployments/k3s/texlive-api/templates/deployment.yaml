@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}
+  labels:
+    app: texlive-api
+spec:
+  replicas: {{ .Values.replicas | default 1 }}
+  selector:
+    matchLabels:
+      app: texlive-api
+  template:
+    metadata:
+      labels:
+        app: texlive-api
+    spec:
+      containers:
+      - name: texlive
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default "latest" }}"
+        ports:
+        - containerPort: {{ .Values.service.port | default 8080 }}
+        resources:
+          {{- toYaml .Values.resources | nindent 10 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-service
+spec:
+  selector:
+    app: texlive-api
+  ports:
+  - protocol: TCP
+    port: {{ .Values.service.port | default 8080 }}
+    targetPort: {{ .Values.service.port | default 8080 }}
+  type: {{ .Values.service.type | default "ClusterIP" }}
