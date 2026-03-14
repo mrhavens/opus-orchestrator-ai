@@ -9,6 +9,7 @@ Key components:
 - research_integration: Connect research agent to pipeline
 - textbook_frameworks: Educational/academic frameworks
 - academic_papers: Established academic paper types
+- creative_frameworks: Interactive, epistolary, experimental formats
 """
 
 from opus_orchestrator.nonfiction.classifier import (
@@ -60,6 +61,11 @@ from opus_orchestrator.nonfiction.academic_papers import (
     get_academic_paper_types,
     suggest_academic_paper,
 )
+from opus_orchestrator.nonfiction.creative_frameworks import (
+    CREATIVE_FRAMEWORKS,
+    get_creative_frameworks,
+    suggest_creative_framework,
+)
 
 __all__ = [
     # Classifier
@@ -103,4 +109,8 @@ __all__ = [
     "ACADEMIC_PAPER_TYPES",
     "get_academic_paper_types",
     "suggest_academic_paper",
+    # Creative Frameworks
+    "CREATIVE_FRAMEWORKS",
+    "get_creative_frameworks",
+    "suggest_creative_framework",
 ]
