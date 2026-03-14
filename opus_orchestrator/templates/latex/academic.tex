@@ -1,0 +1,152 @@
+% Opus Orchestrator - Academic/Textbook Template
+% Technical, educational, academic works
+
+\documentclass[12pt,oneside]{book}
+
+% Packages
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{geometry}
+\usepackage{makeidx}
+\usepackage{natbib}
+\usepackage{titlesec}
+\usepackage{booktabs}
+\usepackage{listings}
+\usepackage{fancyvrb}
+\usepackage{multicol}
+
+% Geometry
+\geometry{
+  paperwidth=8.5in,
+  paperheight=11in,
+  textwidth=6in,
+  textheight=9in,
+  left=1in,
+  right=1in,
+  top=1in,
+  bottom=1in,
+}
+
+% Hyperref
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue,
+  citecolor=blue,
+  urlcolor=blue,
+}
+
+% Chapter formatting
+\titleformat{\chapter}[display]
+  {\normalfont\LARGE\bfseries}
+  {\chaptertitlename\ \thechapter}{20pt}{\LARGE\bfseries}
+
+\titleformat{\section}
+  {\normalfont\Large\bfseries}
+  {\thesection}{12pt}{\Large\bfseries}
+
+\titleformat{\subsection}
+  {\normalfont\large\bfseries}
+  {\thesubsection}{12pt}{\large\bfseries}
+
+% Headers
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[LE]{\thepage}
+\fancyhead[RO]{\thepage}
+\fancyhead[RE]{\leftmark}
+\fancyhead[LO]{\rightmark}
+
+% Code listings
+\lstset{
+  basicstyle=\ttfamily\small,
+  frame=single,
+  backgroundcolor=\color{lightgray},
+}
+
+% Index
+\makeindex
+
+% Book metadata
+\def\booktitle{$book_title$}
+\def\bookauthor{$author$}
+\def\bookdate{$date$}
+\def\bookpublisher{$publisher$}
+\def\bookedition{$edition$}
+
+\begin{document}
+
+% Front matter
+\frontmatter
+
+% Title page
+\begin{titlepage}
+\begin{center}
+\vspace*{1in}
+{\Huge\bfseries\booktitle\par}
+\vspace{0.5in}
+{\Large\bookauthor\par}
+\vfill
+{\large\bookedition}\\
+\bigskip
+{\large\bookpublisher}\\
+{\large\bookdate}
+\end{titlepage}
+
+% Copyright
+\thispagestyle{empty}
+\vspace*{\fill}
+Copyright \textcopyright\ \bookdate\ \bookauthor\\
+All rights reserved.
+\vfill
+
+% Dedication
+$if(dedication)$
+\clearpage
+\begin{center}
+\textit{$dedication$}
+\end{center}
+$endif$
+
+% Acknowledgments
+$if(acknowledgments)$
+\chapter{Acknowledgments}
+$acknowledgments$
+$endif$
+
+% Abstract
+$if(abstract)$
+\chapter{Abstract}
+$abstract$
+$endif$
+
+% Table of contents
+\tableofcontents
+
+% List of figures
+\listoffigures
+
+% List of tables
+\listoftables
+
+% Main matter
+\mainmatter
+
+$body$
+
+% Back matter
+\backmatter
+
+% Bibliography
+$if(bibliography)$
+\bibliographystyle{plainnat}
+\bibliography{$bibliography$}
+$endif$
+
+% Index
+\printindex
+
+\end{document}

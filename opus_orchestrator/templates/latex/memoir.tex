@@ -1,0 +1,135 @@
+% Opus Orchestrator - Memoir Template
+% Novel, memoir, personal narrative
+
+\documentclass[12pt,openany]{memoir}
+
+% Packages
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{geometry}
+\usepackage{xcolor}
+\usepackage{lettrine}
+
+% Geometry - trade book format
+\geometry{
+  paperwidth=5.5in,
+  paperheight=8.5in,
+  textwidth=4in,
+  textheight=7in,
+  inner=0.75in,
+  outer=0.5in,
+  top=0.75in,
+  bottom=0.75in,
+}
+
+% Hyperref
+\hypersetup{
+  colorlinks=false,
+}
+
+% Memoir settings
+\chapterstyle{levado}
+\sectionstyle{hang}
+\subsectionstyle{runin}
+
+% Drop caps
+\def\rubricum#1{{\let\A\firstchar #1}}
+\let\firstchar=
+
+% Custom chapter style
+\makechapterstyle{levado}{
+  \def\chapterheadstart{}
+  \def\beforechaptitle{\centering\spacedallcaps}
+  \def\chapternumber{\chapnumfont\thechapter}
+  \def\afterchaptitle{\par\nobreak\vskip 1.5em}
+}
+
+% Epigraphs
+\epigraphwidth=3in
+\epigraphsize\small
+
+% Headers
+\nouppercaseheads
+\headsep=12pt
+\makepagestyle{opus}
+\makepsmarks{opus}{
+  \createmark{chapter}{left}{shownumber}{\chaptertitleformat}{\ }
+
+  \createmark{section}{right}{shownumber}{\sectiontitleformat}{\ }
+  \nobreak\Cfoot{\thepage}\or
+  \nobreak\cefoot{\thepage}\or
+  \nobreak\cofoot{\thepage}
+}
+\pagestyle{opus}
+
+% Book metadata
+\def\booktitle{$book_title$}
+\def\bookauthor{$author$}
+\def\bookdate{$date$}
+\def\bookpublisher{$publisher$}
+\def\bookseries{$series$}
+
+\begin{document}
+
+% Half title
+\thispagestyle{empty}
+\begin{center}
+\vspace*{2in}
+{\Huge\scshape\booktitle\par}
+\end{center}
+
+% Title page
+\clearpage
+\thispagestyle{empty}
+\begin{center}
+\vspace*{1in}
+{\Huge\scshape\booktitle\par}
+\vspace{2in}
+{\Large\scshape\bookauthor\par}
+\vfill
+{\large\scshape\bookpublisher\par}
+{\large\scshape\bookdate\par}
+\end{center}
+
+% Copyright
+\clearpage
+\thispagestyle{empty}
+\vspace*{\fill}
+\begin{center}
+Copyright \textcopyright\ \bookdate\ \bookauthor\\
+All rights reserved.\\
+ISBN: $isbn$
+\end{center}
+\vspace*{\fill}
+
+% Dedication
+$if(dedication)$
+\clearpage
+\thispagestyle{empty}
+\vspace*{3in}
+\begin{center}
+\textit{$dedication$}
+\end{center}
+$endif$
+
+% Epigraph
+$if(epigraph)$
+\clearpage
+\begin{center}
+\textit{$epigraph$}
+\end{center}
+$endif$
+
+% Contents
+\clearpage
+\tableofcontents*
+
+\clearpage
+\mainmatter
+
+$body$
+
+\end{document}

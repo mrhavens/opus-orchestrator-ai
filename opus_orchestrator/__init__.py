@@ -159,3 +159,18 @@ __all__ = [
     "ExportOptions",
     "ExportOptions",
 ]
+
+def __getattr__(name):
+    if name == "LaTeXExporter":
+        from opus_orchestrator.latex_compile import LaTeXExporter
+        return LaTeXExporter
+    if name == "CompileOptions":
+        from opus_orchestrator.latex_compile import CompileOptions
+        return CompileOptions
+    if name == "export_to_latex":
+        from opus_orchestrator.latex_compile import export_to_latex
+        return export_to_latex
+    if name == "compile_pdf":
+        from opus_orchestrator.latex_compile import compile_pdf
+        return compile_pdf
+    raise AttributeError(f"module has no attribute {name!r}")

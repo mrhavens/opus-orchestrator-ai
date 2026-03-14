@@ -1,0 +1,123 @@
+% Opus Orchestrator - Base LaTeX Template
+% Auto-generated book template
+
+\documentclass[12pt,openany]{book}
+
+% Packages
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{geometry}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{indentfirst}
+\usepackage{epigraph}
+\usepackage{changepage}
+
+% Geometry
+\geometry{
+  paperwidth=6in,
+  paperheight=9in,
+  textwidth=4.5in,
+  textheight=7in,
+  headheight=12pt,
+  headsep=12pt,
+  footskip=24pt,
+  marginparwidth=0pt,
+}
+
+% Hyperref
+\hypersetup{
+  colorlinks=true,
+  linkcolor=black,
+  citecolor=black,
+  urlcolor=black,
+}
+
+% Title formatting
+\titleformat{\chapter}[display]
+  {\normalfont\LARGE\bfseries}
+  {\chaptertitlefont\thechapter}{1em}{\chaptertitlefont\titlefont}
+
+\titleformat{\section}
+  {\normalfont\Large\bfseries}
+  {\thesection}{1em}{}
+
+\titleformat{\subsection}
+  {\normalfont\large\bfseries}
+  {\thesubsection}{1em}{}
+
+% Headers
+\fancyhf{}
+\fancyhead[LE]{\nouppercase{\thechapter}}
+\fancyhead[RO]{\nouppercase{\rightmark}}
+\fancyfoot[C]{\thepage}
+\pagestyle{fancy}
+
+% Commands
+\newcommand{\chaptertitlefont}{\scshape}
+\newcommand{\titlefont}{\scshape}
+
+% Book metadata (filled by Opus)
+\def\booktitle{$book_title$}
+\def\bookauthor{$author$}
+\def\bookdate{$date$}
+\def\bookpublisher{$publisher$}
+\def\bookisbn{$isbn$}
+
+\begin{document}
+
+% Frontmatter
+\frontmatter
+
+% Title page
+\begin{titlepage}
+\begin{center}
+\vspace*{1in}
+{\Huge\scshape\booktitle\par}
+\vspace{2in}
+{\Large\scshape\bookauthor\par}
+\vspace{1in}
+{\large\scshape\bookdate\par}
+\vfill
+\end{titlepage}
+
+% Copyright page
+\thispagestyle{empty}
+\vspace*{\fill}
+\begin{center}
+Copyright \textcopyright\ \bookdate\ \bookauthor\\
+All rights reserved.\\
+\bookisbn
+\end{center}
+\vspace*{\fill}
+
+% Dedication (if any)
+$if(dedication)$
+\cleardoublepage
+\thispagestyle{empty}
+\vspace*{3in}
+\begin{center}
+\textit{$dedication$}
+\end{center}
+$endif$
+
+% Table of contents
+\tableofcontents
+
+% Main body
+\mainmatter
+
+$body$
+
+% Backmatter
+\backmatter
+
+% Bibliography (if any)
+$if(bibliography)$
+\printbibliography
+$endif$
+
+\end{document}
