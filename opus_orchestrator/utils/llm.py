@@ -27,6 +27,7 @@ class LLMClient:
         model: str = "MiniMax/MiniMax-M2.1",
         base_url: Optional[str] = None,
         max_retries: int = 3,
+        timeout: float = 120.0,
     ):
         """Initialize LLM client.
         
@@ -40,6 +41,7 @@ class LLMClient:
         self.api_key = api_key or os.environ.get("MINIMAX_API_KEY") or os.environ.get("OPENAI_API_KEY")
         self.provider = provider
         self.model = model
+        self.timeout = timeout
         
         # Normalize model name for MiniMax
         if provider == "minimax":
@@ -57,7 +59,7 @@ class LLMClient:
             self.base_url = "https://api.openai.com/v1"
         
         # Async client
-        self._async_client = httpx.AsyncClient(timeout=120.0)
+        self._async_client = httpx.AsyncClient(timeout=self.timeout)
         
         # Initialize retry handler
         retry_config = RetryConfig(
@@ -237,7 +239,7 @@ class LLMClient:
             f"{self.base_url}/v1/messages",
             headers={**headers, "Content-Type": "application/json"},
             json=payload,
-            timeout=120,
+            timeout=self.timeout,
         )
         
         if response.status_code != 200:
@@ -288,7 +290,7 @@ class LLMClient:
             f"{self.base_url}/chat/completions",
             headers=headers,
             json=payload,
-            timeout=120,
+            timeout=self.timeout,
         )
         response.raise_for_status()
         
@@ -307,4 +309,5 @@ def get_llm_client(config: Optional[Any] = None) -> LLMClient:
         api_key=cfg.agent.api_key,
         provider=cfg.agent.provider,
         model=cfg.agent.model,
+        timeout=cfg.agent.timeout,
     )

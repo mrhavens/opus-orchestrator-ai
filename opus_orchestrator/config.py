@@ -28,6 +28,7 @@ class AgentConfig(BaseModel):
     temperature: float = Field(default=0.7, ge=0.0, le=2.0)
     max_tokens: Optional[int] = Field(default=None, description="Max tokens per response")
     max_iterations: int = Field(default=10, description="Max iterations per agent task")
+    timeout: float = Field(default=120.0, description="HTTP timeout in seconds")
     
     # Provider configuration
     provider: str = Field(default="minimax", description="LLM provider: minimax, openai, anthropic")
