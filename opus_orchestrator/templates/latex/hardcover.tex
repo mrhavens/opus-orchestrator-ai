@@ -1,0 +1,121 @@
+% Opus Orchestrator - Hardcover Template
+% Premium hardcover binding
+
+\documentclass[12pt]{book}
+
+% Packages
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{geometry}
+\usepackage{microtype}
+\usepackage{textcomp}
+\usepackage{color}
+
+% Hardcover trim (slightly larger for binding)
+\geometry{
+  paperwidth=6.14in,
+  paperheight=9.21in,
+  textwidth=4.5in,
+  textheight=7.5in,
+  inner=0.75in,
+  outer=0.5in,
+  top=0.75in,
+  bottom=0.75in,
+}
+
+% Microtype
+\microtypesetup{protrusion=true}
+
+% Hyperref
+\hypersetup{
+  colorlinks=false,
+}
+
+% Fonts
+\usepackage{mathptmx}
+\usepackage[T1]{url}
+
+% Fancy chapter headings
+\usepackage{titlesec}
+\titleformat{\chapter}[display]
+  {\normalfont\LARGE\bfseries}
+  {\chaptertitlename\ \thechapter}{20pt}{\LARGE\bfseries}
+
+% Headers
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[LE]{\thepage}
+\fancyhead[RO]{\thepage}
+\fancyhead[RE]{\leftmark}
+\fancyhead[LO]{\rightmark}
+
+% Metadata
+\def\booktitle{$book_title$}
+\def\bookauthor{$author$}
+\def\bookdate{$date$}
+\def\bookpublisher{$publisher$}
+
+\begin{document}
+
+% Half title
+\thispagestyle{empty}
+\vspace*{2in}
+\begin{center}
+{\Huge\scshape\booktitle}
+\end{center}
+
+% Title page
+\clearpage
+\thispagestyle{empty}
+\vspace*{1in}
+\begin{center}
+{\Huge\scshape\booktitle\par}
+\vspace{1in}
+{\Large\scshape\bookauthor\par}
+\vfill
+{\large\scshape\bookpublisher}\\
+{\scshape\bookdate}
+\end{center}
+
+% Copyright
+\clearpage
+\thispagestyle{empty}
+\vspace*{\fill}
+\begin{center}
+Copyright \textcopyright\ \bookdate\ \bookauthor\\
+All rights reserved.\\
+ISBN: $isbn$
+\end{center}
+\vspace*{\fill}
+
+% Dedication
+$if(dedication)$
+\clearpage
+\thispagestyle{empty}
+\vspace*{3in}
+\begin{center}
+\textit{$dedication$}
+\end{center}
+$endif$
+
+% Epigraph
+$if(epigraph)$
+\clearpage
+\begin{center}
+\textit{$epigraph$}
+\end{center}
+$endif$
+
+% Contents
+\clearpage
+\tableofcontents
+
+\mainmatter
+
+$body$
+
+\end{document}

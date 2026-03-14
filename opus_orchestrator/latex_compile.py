@@ -45,14 +45,30 @@ class LaTeXExporter:
     """Export manuscript to LaTeX and compile to PDF."""
     
     TEMPLATES = {
-        "novel": "novel.tex",           # General fiction
-        "memoir": "memoir.tex",         # Memoir/personal narrative
-        "kdp-trade": "kdp-trade.tex",  # KDP 5.5x8.5
-        "academic": "academic.tex",      # Academic/technical
-        "textbook": "textbook.tex",     # Textbook with exercises
-        "poetry": "poetry.tex",         # Poetry collections
-        "childrens": "childrens.tex",   # Picture books
-        "base": "base.tex",             # Basic template
+        # KDP Templates (print-ready)
+        "kdp-pocket": "kdp-pocket.tex",     # 5x8 mass market
+        "kdp-trade": "kdp-trade.tex",     # 5.5x8.5 standard
+        "kdp-6x9": "kdp-6x9.tex",         # 6x9 popular
+        "kdp-square": "kdp-square.tex",     # 8x8 art/photo
+        "kdp-large": "kdp-large.tex",      # 8.5x11 workbook
+        
+        # Book Types
+        "novel": "novel.tex",              # General fiction
+        "memoir": "memoir.tex",           # Memoir/personal
+        "hardcover": "hardcover.tex",      # Premium hardcover
+        "poetry": "poetry.tex",           # Poetry collections
+        "childrens": "childrens.tex",     # Picture books
+        
+        # Technical/Educational
+        "academic": "academic.tex",        # Academic papers
+        "textbook": "textbook.tex",       # With exercises
+        "journal": "journal.tex",          # Workbooks/planners
+        
+        # Specialty
+        "screenplay": "screenplay.tex",   # Film/TV scripts
+        
+        # Base
+        "base": "base.tex",               # Minimal template
     }
     
     def __init__(self, template_dir: Optional[str] = None):

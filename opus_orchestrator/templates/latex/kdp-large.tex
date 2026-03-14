@@ -1,0 +1,86 @@
+% Opus Orchestrator - KDP Large Format 8.5x11
+% Workbooks, coloring books, textbooks
+
+\documentclass[12pt]{memoir}
+
+% Packages
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{geometry}
+\usepackage{microtype}
+\usepackage{textcomp}
+\usepackage{color}
+\usepackage{booktabs}
+\usepackage{multicol}
+
+% KDP Large: 8.5 x 11 inches
+\geometry{
+  papersize={8.5in,11in},
+  textwidth=7in,
+  textheight=9in,
+  inner=0.75in,
+  outer=0.75in,
+  top=1in,
+  bottom=1in,
+}
+
+% Bleed
+\usepackage[cam,center]{crop}
+
+% Microtype
+\microtypesetup{protrusion=true}
+
+% Hyperref
+\hypersetup{
+  colorlinks=false,
+}
+
+% Fonts
+\usepackage{mathptmx}
+
+% Chapter style
+\chapterstyle{hangnum}
+
+% Headers
+\pagestyle{simple}
+
+% Metadata
+\def\booktitle{$book_title$}
+\def\bookauthor{$author$}
+\def\bookdate{$date$}
+\def\bookpublisher{$publisher$}
+
+\begin{document}
+
+% Title page
+\thispagestyle{empty}
+\begin{center}
+\vspace*{1in}
+{\Huge\bfseries\booktitle\par}
+\vspace{1in}
+{\Large by \bookauthor\par}
+\vfill
+{\large\bookpublisher}\\
+{\bookdate}
+\end{center}
+
+% Copyright
+\clearpage
+\thispagestyle{empty}
+\vspace*{\fill}
+\begin{center}
+Copyright \textcopyright\ \bookdate\ \bookauthor\\
+All rights reserved.
+\end{center}
+\vspace*{\fill}
+
+% Contents
+\clearpage
+\tableofcontents
+
+$body$
+
+\end{document}

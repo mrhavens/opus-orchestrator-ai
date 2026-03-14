@@ -1,0 +1,93 @@
+% Opus Orchestrator - KDP Pocket Book 5x8
+% Mass market paperback, pocket size
+
+\documentclass[11pt]{memoir}
+
+% Packages
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{geometry}
+\usepackage{microtype}
+\usepackage{textcomp}
+
+% KDP Pocket: 5 x 8 inches
+\geometry{
+  papersize={5in,8in},
+  textwidth=4in,
+  textheight=6.5in,
+  inner=0.5in,
+  outer=0.5in,
+  top=0.5in,
+  bottom=0.5in,
+  bindingoffset=0.125in,
+}
+
+% Microtype
+\microtypesetup{protrusion=true}
+
+% Hyperref
+\hypersetup{
+  colorlinks=false,
+  pdfborder={0 0 0},
+}
+
+% Fonts - compact
+\usepackage{mathptmx}
+
+% Chapter style - compact
+\chapterstyle{dowding}
+\setsecnumdepth{none}
+
+% Headers
+\pagestyle{plain}
+
+% Metadata
+\def\booktitle{$book_title$}
+\def\bookauthor{$author$}
+\def\bookdate{$date$}
+\def\bookpublisher{$publisher$}
+
+\begin{document}
+
+% Title page
+\thispagestyle{empty}
+\vspace*{0.5in}
+\begin{center}
+{\Large\scshape\booktitle\par}
+\vspace{1in}
+{\large\scshape\bookauthor\par}
+\vfill
+{\scshape\bookpublisher}\\
+\bookdate
+\end{center}
+
+% Copyright
+\clearpage
+\thispagestyle{empty}
+\vspace*{\fill}
+\begin{center}
+Copyright \textcopyright\ \bookdate\ \bookauthor\\
+All rights reserved.
+\end{center}
+\vspace*{\fill}
+
+% Dedication
+$if(dedication)$
+\clearpage
+\thispagestyle{empty}
+\vspace*{2in}
+\begin{center}
+\textit{$dedication$}
+\end{center}
+$endif$
+
+% Contents
+\clearpage
+\tableofcontents
+
+$body$
+
+\end{document}

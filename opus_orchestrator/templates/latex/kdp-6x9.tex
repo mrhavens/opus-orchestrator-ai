@@ -1,0 +1,100 @@
+% Opus Orchestrator - KDP 6x9 Template
+% Amazon KDP 6" x 9" standard
+
+\documentclass[12pt]{memoir}
+
+% Packages
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{geometry}
+\usepackage{microtype}
+\usepackage{textcomp}
+\usepackage{color}
+
+% KDP Trim Size: 6 x 9 inches
+\geometry{
+  papersize={6in,9in},
+  textwidth=4.5in,
+  textheight=7.5in,
+  inner=0.75in,
+  outer=0.5in,
+  top=0.75in,
+  bottom=0.75in,
+  bindingoffset=0.25in,
+}
+
+% Bleed for KDP
+\usepackage[cam,center]{crop}
+
+% Microtype
+\microtypesetup{protrusion=true}
+
+% Hyperref
+\hypersetup{
+  colorlinks=false,
+  pdfborder={0 0 0},
+}
+
+% Fonts
+\usepackage{mathptmx}
+
+% Chapter style
+\chapterstyle{dowding}
+
+% Headers
+\pagestyle{simple}
+
+% Metadata
+\def\booktitle{$book_title$}
+\def\bookauthor{$author$}
+\def\bookdate{$date$}
+\def\bookpublisher{$publisher$}
+\def\bookisbn{$isbn$}
+
+\begin{document}
+
+% Title page
+\thispagestyle{empty}
+\vspace*{1in}
+\begin{center}
+{\Huge\scshape\booktitle\par}
+\vspace{1in}
+{\Large\scshape\bookauthor\par}
+\vfill
+{\large\scshape\bookpublisher}\\
+{\scshape\bookdate}
+\end{center}
+
+% Copyright
+\clearpage
+\thispagestyle{empty}
+\vspace*{\fill}
+\begin{center}
+Copyright \textcopyright\ \bookdate\ \bookauthor\\
+\bigskip
+All rights reserved.\\
+\bigskip
+ISBN: $isbn$
+\end{center}
+\vspace*{\fill}
+
+% Dedication
+$if(dedication)$
+\clearpage
+\thispagestyle{empty}
+\vspace*{3in}
+\begin{center}
+\textit{$dedication$}
+\end{center}
+$endif$
+
+% Contents
+\clearpage
+\tableofcontents
+
+$body$
+
+\end{document}
