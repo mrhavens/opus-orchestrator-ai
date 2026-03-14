@@ -140,11 +140,15 @@ class OpusGraph:
         self.framework = framework
         self.genre = genre
         self.target_word_count = target_word_count
-        self.api_key = api_key or os.environ.get("OPENAI_API_KEY")
+        
+        # Get API key and provider from environment
+        self.api_key = api_key or os.environ.get("MINIMAX_API_KEY") or os.environ.get("OPENAI_API_KEY")
+        self.provider = os.environ.get("OPUS_PROVIDER", "minimax")
+        self.model = os.environ.get("OPUS_MODEL", "MiniMax-M2.5")
         self.use_autogen = use_autogen
         
-        # Use synchronous LLM
-        self.llm = LLMClient(api_key=self.api_key, provider="openai", model="gpt-4o")
+        # Use synchronous LLM with config
+        self.llm = LLMClient(api_key=self.api_key, provider=self.provider, model=self.model)
         
         # AutoGen critique crew
         self.critique_crew = None

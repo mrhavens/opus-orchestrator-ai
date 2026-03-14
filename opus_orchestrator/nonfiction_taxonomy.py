@@ -58,6 +58,9 @@ class NonfictionCategory(str, Enum):
     CREATIVITY = "creativity"
     SPIRITUALITY = "spirituality"
     HOW_TO = "how_to"
+    EDUCATION = "education"
+    ACADEMIC = "academic"
+    RPG = "rpg"
 
 
 # ============================================================================

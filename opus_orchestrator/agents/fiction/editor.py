@@ -182,7 +182,7 @@ Provide:
                         if numbers:
                             score = float(numbers[0])
                             break
-                    except:
+                    except (ValueError, IndexError):
                         pass
 
             return AgentResponse(

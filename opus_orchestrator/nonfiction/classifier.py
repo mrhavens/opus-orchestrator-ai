@@ -7,7 +7,7 @@ Usage:
     from opus_orchestrator.nonfiction.classifier import PurposeClassifier, ReaderPurpose
     
     classifier = PurposeClassifier()
-    result = await classifier.classify(
+    result = classifier._keyword_classify(
         concept="Leadership for introverts",
         target_audience="Introverted professionals who want to develop leadership skills",
         intended_outcome="Learn to lead with quiet confidence"
@@ -19,20 +19,11 @@ Usage:
 """
 
 import re
-import json
 from dataclasses import dataclass
-from enum import Enum
 from typing import Optional
 
-
-class ReaderPurpose(str, Enum):
-    """Why is the reader reading this book?"""
-    LEARN_HANDS_ON = "learn_hands_on"
-    UNDERSTAND = "understand"
-    TRANSFORM = "transform"
-    DECIDE = "decide"
-    REFERENCE = "reference"
-    BE_INSPIRED = "be_inspired"
+# Import ReaderPurpose from taxonomy to avoid duplicate enum definitions
+from opus_orchestrator.nonfiction_taxonomy import ReaderPurpose
 
 
 @dataclass

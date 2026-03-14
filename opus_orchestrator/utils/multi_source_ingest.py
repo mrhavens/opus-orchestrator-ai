@@ -193,7 +193,7 @@ class MultiSourceIngestor:
                     text = f.read_text(encoding='utf-8', errors='ignore')
                     rel_path = f.relative_to(path)
                     content_parts.append(f"## {rel_path}\n\n{text}\n")
-                except:
+                except OSError:
                     pass
         
         merged = "\n\n".join(content_parts)

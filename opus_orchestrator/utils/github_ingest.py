@@ -9,9 +9,7 @@ import re
 from typing import Any, Optional
 
 import requests
-from dotenv import load_dotenv
-
-load_dotenv()
+# Note: dotenv loading removed - set GITHUB_TOKEN environment variable directly
 
 
 class GitHubIngestor:

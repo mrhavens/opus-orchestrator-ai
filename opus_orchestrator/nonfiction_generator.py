@@ -8,7 +8,6 @@ from typing import Any, Optional
 
 from dotenv import load_dotenv
 
-load_dotenv()
 
 from opus_orchestrator.nonfiction_frameworks import (
     NonfictionFramework,

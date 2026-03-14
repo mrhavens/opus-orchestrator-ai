@@ -186,7 +186,7 @@ class TestIntegration:
     """Integration tests - skip if no API key."""
     
     @pytest.mark.skipif(
-        not __import__('os')..environ.get('OPENAI_API_KEY'),
+        not __import__('os').environ.get('OPENAI_API_KEY'),
         reason="No API key"
     )
     def test_real_api_call(self):

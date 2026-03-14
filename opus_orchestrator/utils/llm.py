@@ -1,6 +1,7 @@
 """LLM client for Opus Orchestrator.
 
 Supports MiniMax and OpenAI providers - both async and sync.
+Includes retry logic with exponential backoff and circuit breaker.
 """
 
 import os
@@ -10,9 +11,14 @@ from typing import Any, Optional
 import httpx
 import requests
 
+from opus_orchestrator.utils.retry import RetryHandler, RetryConfig
+
 
 class LLMClient:
-    """Simple LLM client for making API calls - supports both sync and async."""
+    """Simple LLM client for making API calls - supports both sync and async.
+    
+    Includes built-in retry logic with circuit breaker for resilience.
+    """
 
     def __init__(
         self,
@@ -20,8 +26,17 @@ class LLMClient:
         provider: str = "minimax",
         model: str = "MiniMax/MiniMax-M2.1",
         base_url: Optional[str] = None,
+        max_retries: int = 3,
     ):
-        """Initialize LLM client."""
+        """Initialize LLM client.
+        
+        Args:
+            api_key: API key for the provider
+            provider: LLM provider (minimax, openai)
+            model: Model name
+            base_url: Optional custom base URL
+            max_retries: Maximum retry attempts (default 3)
+        """
         self.api_key = api_key or os.environ.get("MINIMAX_API_KEY") or os.environ.get("OPENAI_API_KEY")
         self.provider = provider
         self.model = model
@@ -34,7 +49,8 @@ class LLMClient:
         if base_url:
             self.base_url = base_url
         elif provider == "minimax":
-            self.base_url = "https://api.minimax.chat/v1"
+            # Use Anthropic-compatible API (like OpenClaw uses)
+            self.base_url = "https://api.minimax.io/anthropic"
         elif provider == "openai":
             self.base_url = "https://api.openai.com/v1"
         else:
@@ -42,6 +58,16 @@ class LLMClient:
         
         # Async client
         self._async_client = httpx.AsyncClient(timeout=120.0)
+        
+        # Initialize retry handler
+        retry_config = RetryConfig(
+            max_attempts=max_retries,
+            base_delay=1.0,
+            max_delay=30.0,
+            exponential_base=2.0,
+            jitter=True,
+        )
+        self._retry_handler = RetryHandler(retry_config)
 
     def complete(
         self,
@@ -74,24 +100,33 @@ class LLMClient:
         temperature: float = 0.7,
         max_tokens: Optional[int] = None,
     ) -> str:
-        """Make a completion request (ASYNC)."""
-        headers = {
-            "Authorization": f"Bearer {self.api_key}",
-            "Content-Type": "application/json",
-        }
+        """Make a completion request (ASYNC) with retry logic."""
         
-        if self.provider == "minimax":
-            return await self._complete_minimax_async(
-                system_prompt, user_prompt, temperature, max_tokens, headers
-            )
-        elif self.provider == "openai":
-            return await self._complete_openai_async(
-                system_prompt, user_prompt, temperature, max_tokens, headers
-            )
-        else:
-            raise ValueError(f"Unsupported provider: {self.provider}")
+        async def _make_request():
+            headers = {
+                "Authorization": f"Bearer {self.api_key}",
+                "Content-Type": "application/json",
+            }
+            
+            if self.provider == "minimax":
+                return await self._complete_minimax_async(
+                    system_prompt, user_prompt, temperature, max_tokens, headers
+                )
+            elif self.provider == "openai":
+                return await self._complete_openai_async(
+                    system_prompt, user_prompt, temperature, max_tokens, headers
+                )
+            else:
+                raise ValueError(f"Unsupported provider: {self.provider}")
+        
+        # Use retry handler for resilience
+        try:
+            return await self._retry_handler.execute_with_retry(_make_request)
+        except Exception as e:
+            # Log and re-raise with context
+            raise RuntimeError(f"LLM request failed after retries: {e}") from e
 
-    async def _complete_minimax(
+    async def _complete_minimax_async(
         self,
         system_prompt: str,
         user_prompt: str,
@@ -99,8 +134,8 @@ class LLMClient:
         max_tokens: Optional[int],
         headers: dict,
     ) -> str:
-        """Call MiniMax API."""
-        # MiniMax chat completion format
+        """Call MiniMax API using Anthropic-compatible endpoint."""
+        # Anthropic-compatible format
         payload = {
             "model": self.minimax_model,
             "messages": [
@@ -113,9 +148,10 @@ class LLMClient:
         if max_tokens:
             payload["max_tokens"] = max_tokens
         
+        # Use Anthropic-compatible endpoint
         response = await self._async_client.post(
-            f"{self.base_url}/text/chatcompletion_v2",
-            headers=headers,
+            f"{self.base_url}/v1/messages",
+            headers={**headers, "Content-Type": "application/json"},
             json=payload,
         )
         
@@ -127,13 +163,13 @@ class LLMClient:
         
         data = response.json()
         
-        # Handle different response formats
-        if "choices" in data:
-            return data["choices"][0]["message"]["content"]
-        elif "choices" in data.get("data", {}):
-            return data["data"]["choices"][0]["message"]["content"]
+        # Handle Anthropic-compatible response format
+        if "content" in data:
+            # Return the text content
+            if isinstance(data["content"], list) and len(data["content"]) > 0:
+                return data["content"][0].get("text", str(data["content"][0]))
+            return str(data["content"])
         else:
-            # Try to find content in response
             raise Exception(f"Unexpected MiniMax response: {data}")
 
     async def _complete_openai(
@@ -183,7 +219,7 @@ class LLMClient:
         max_tokens: Optional[int],
         headers: dict,
     ) -> str:
-        """Call MiniMax API (sync)."""
+        """Call MiniMax API (sync) using Anthropic-compatible endpoint."""
         payload = {
             "model": self.minimax_model,
             "messages": [
@@ -196,9 +232,10 @@ class LLMClient:
         if max_tokens:
             payload["max_tokens"] = max_tokens
         
+        # Use Anthropic-compatible endpoint
         response = requests.post(
-            f"{self.base_url}/text/chatcompletion_v2",
-            headers=headers,
+            f"{self.base_url}/v1/messages",
+            headers={**headers, "Content-Type": "application/json"},
             json=payload,
             timeout=120,
         )
@@ -210,10 +247,19 @@ class LLMClient:
         
         data = response.json()
         
-        if "choices" in data:
-            return data["choices"][0]["message"]["content"]
-        elif "choices" in data.get("data", {}):
-            return data["data"]["choices"][0]["message"]["content"]
+        # Handle Anthropic-compatible response format
+        if "content" in data:
+            if isinstance(data["content"], list) and len(data["content"]) > 0:
+                # Look for text content, skip thinking
+                text_parts = []
+                for item in data["content"]:
+                    if item.get("type") == "text":
+                        text_parts.append(item.get("text", ""))
+                if text_parts:
+                    return "".join(text_parts)
+                # If no text found, return first item as string
+                return str(data["content"][0])
+            return str(data["content"])
         else:
             raise Exception(f"Unexpected MiniMax response: {data}")
 

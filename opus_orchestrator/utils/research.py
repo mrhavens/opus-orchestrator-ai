@@ -178,7 +178,7 @@ class WikipediaTool:
                         "summary": page.summary[:500],
                         "content": page.content[:2000],
                     })
-                except:
+                except Exception:
                     continue
             return articles
         except Exception as e:

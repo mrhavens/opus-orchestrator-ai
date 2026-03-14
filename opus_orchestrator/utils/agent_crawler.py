@@ -284,7 +284,7 @@ Just respond with a number between 0.0 and 1.0."""
         
         try:
             return float(response.strip())
-        except:
+        except (ValueError, TypeError):
             return 0.5
     
     def _simple_relevance(self, content: str, purpose: CrawlPurpose) -> float:

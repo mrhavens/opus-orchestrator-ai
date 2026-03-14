@@ -22,7 +22,7 @@ CREATIVE_FRAMEWORKS = {
         "description": "Branching narrative where reader choices determine the story path. Multiple endings based on decisions.",
         "purpose": ReaderPurpose.BE_INSPIRED,
         "structure": StructuralPattern.NARRATIVE,
-        "category": NonfictionCategory.CREATIVE,
+        "category": NonfictionCategory.CREATIVITY,
         "stages": [
             "Introduction - Set the scene",
             "Opening Choice - First decision point",
@@ -59,7 +59,7 @@ Include:
         "description": "RPG-style adventure with combat, stats, and inventory. Reader/player is the protagonist.",
         "purpose": ReaderPurpose.BE_INSPIRED,
         "structure": StructuralPattern.NARRATIVE,
-        "category": NonfictionCategory.CREATIVE,
+        "category": NonfictionCategory.CREATIVITY,
         "stages": [
             "Character Creation - Stats, skills",
             "Equipment List - Starting items",
@@ -95,7 +95,7 @@ Include:
         "description": "Game script with character dialogues, scene descriptions, and choice points. Anime/VN style.",
         "purpose": ReaderPurpose.BE_INSPIRED,
         "structure": StructuralPattern.NARRATIVE,
-        "category": NonfictionCategory.CREATIVE,
+        "category": NonfictionCategory.CREATIVITY,
         "stages": [
             "Title Screen / Opening",
             "Prologue",
@@ -135,7 +135,7 @@ Include:
         "description": "Story told entirely through documents: letters, emails, texts, diary entries, etc.",
         "purpose": ReaderPurpose.BE_INSPIRED,
         "structure": StructuralPattern.NARRATIVE,
-        "category": NonfictionCategory.CREATIVE,
+        "category": NonfictionCategory.CREATIVITY,
         "stages": [
             "Editor's Note - Frame narrative",
             "Document 1: Letter/Email/Text",
@@ -170,7 +170,7 @@ Include:
         "description": "A story revealed through discovered materials: redacted files, journal fragments, annotated maps.",
         "purpose": ReaderPurpose.BE_INSPIRED,
         "structure": StructuralPattern.NARRATIVE,
-        "category": NonfictionCategory.CREATIVE,
+        "category": NonfictionCategory.CREATIVITY,
         "stages": [
             "Foreword - How these were found",
             "Artifact 1: Document type",
@@ -207,7 +207,7 @@ Include:
         "description": "Revolutionary call to action. A passionate argument for change.",
         "purpose": ReaderPurpose.BE_INSPIRED,
         "structure": StructuralPattern.ARGUMENT,
-        "category": NonfictionCategory.CREATIVE,
+        "category": NonfictionCategory.CREATIVITY,
         "stages": [
             "Opening - The problem we've ignored",
             "Part 1: What Is - Current state",
@@ -242,7 +242,7 @@ Include:
         "description": "Public letter to a specific person/entity. Makes a point through direct address.",
         "purpose": ReaderPurpose.DECIDE,
         "structure": StructuralPattern.ARGUMENT,
-        "category": NonfictionCategory.CREATIVE,
+        "category": NonfictionCategory.CREATIVITY,
         "stages": [
             "Salutation - Dear [Name/Entity]",
             "Opening - Why I'm writing publicly",
@@ -279,7 +279,7 @@ Include:
         "description": "Endlessly extensible story. Each chapter ends with a new beginning. For serialization.",
         "purpose": ReaderPurpose.BE_INSPIRED,
         "structure": StructuralPattern.NARRATIVE,
-        "category": NonfictionCategory.CREATIVE,
+        "category": NonfictionCategory.CREATIVITY,
         "stages": [
             "Episode 1: Complete arc",
             "Episode 1 Cliffhanger - Link to next",
@@ -313,7 +313,7 @@ Include:
         "description": "Story that repeats at different scales. Chapter mirrors scene mirrors paragraph.",
         "purpose": ReaderPurpose.BE_INSPIRED,
         "structure": StructuralPattern.NARRATIVE,
-        "category": NonfictionCategory.CREATIVE,
+        "category": NonfictionCategory.CREATIVITY,
         "stages": [
             "Macro Level: The Overall Arc",
             "Structure mirrors down",
@@ -344,7 +344,7 @@ Include:
         "description": "Non-linear collection of fragments: memories, images (described), ticket stubs, recipes, etc.",
         "purpose": ReaderPurpose.BE_INSPIRED,
         "structure": StructuralPattern.SPIRAL,
-        "category": NonfictionCategory.CREATIVE,
+        "category": NonfictionCategory.CREATIVITY,
         "stages": [
             "Opening Spread - First impressions",
             "Fragment 1: Memory/Image",
@@ -381,7 +381,7 @@ Include:
         "description": "Script for spoken audio. Includes banter, segments, transitions.",
         "purpose": ReaderPurpose.LEARN_HANDS_ON,
         "structure": StructuralPattern.SEQUENTIAL,
-        "category": NonfictionCategory.CREATIVE,
+        "category": NonfictionCategory.CREATIVITY,
         "stages": [
             "Intro - Hook + branding",
             "Cold Open - Tease",
@@ -415,7 +415,7 @@ Include:
         "description": "Hollywood standard screenplay format. Visual storytelling through action and dialogue.",
         "purpose": ReaderPurpose.BE_INSPIRED,
         "structure": StructuralPattern.NARRATIVE,
-        "category": NonfictionCategory.CREATIVE,
+        "category": NonfictionCategory.CREATIVITY,
         "stages": [
             "Title Page",
             "Fade In",
@@ -451,7 +451,7 @@ Include:
         "description": "Theatrical script with scenes, stage directions, and dialogue.",
         "purpose": ReaderPurpose.BE_INSPIRED,
         "structure": StructuralPattern.NARRATIVE,
-        "category": NonfictionCategory.CREATIVE,
+        "category": NonfictionCategory.CREATIVITY,
         "stages": [
             "Title Page",
             "Dramatis Personae - Characters",

@@ -87,7 +87,8 @@ class BaseAgent(ABC, Generic[T]):
         """
         temp = temperature if temperature is not None else self.config.temperature
         
-        return await self.llm_client.complete(
+        # Use async version for async context
+        return await self.llm_client.complete_async(
             system_prompt=system_prompt,
             user_prompt=user_prompt,
             temperature=temp,

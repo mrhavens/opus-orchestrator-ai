@@ -10,7 +10,6 @@ from typing import Any, Optional
 
 from dotenv import load_dotenv
 
-load_dotenv()
 
 from opus_orchestrator.agents.fiction import (
     ArchitectAgent,
@@ -347,8 +346,6 @@ Generate a detailed outline with:
         Returns:
             RawContent with the combined text from the repo
         """
-        from opus_orchestrator.utils.github_ingest import GitHubIngestor
-        
         print(f"📥 Loading from GitHub: {repo}")
         
         github_token = self.config.github_token or os.environ.get("GITHUB_TOKEN")
