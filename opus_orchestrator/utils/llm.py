@@ -310,4 +310,5 @@ def get_llm_client(config: Optional[Any] = None) -> LLMClient:
         api_key=cfg.agent.api_key,
         provider=cfg.agent.provider,
         model=cfg.agent.model,
+        timeout=cfg.agent.timeout,
     )
