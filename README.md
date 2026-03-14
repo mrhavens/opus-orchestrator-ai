@@ -4,23 +4,43 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/python-3.10+-blue.svg" alt="Python">
-  <img src="https://img.shields.io/badge/LangGraph-✅-green.svg" alt="LangGraph">
-  <img src="https://img.shields.io/badge/CrewAI-✅-green.svg" alt="CrewAI">
-  <img src="https://img.shields.io/badge/AutoGen-✅-green.svg" alt="AutoGen">
-  <img src="https://img.shields.io/badge/Pydantic-✅-green.svg" alt="Pydantic">
+  <img src="https://img.shields.io/badge/LLM-MiniMax_M2.5-green.svg" alt="MiniMax">
+  <img src="https://img.shields.io/badge/KDP-Ready-orange.svg" alt="KDP">
+  <img src="https://img.shields.io/badge/Docker-k3s-blue.svg" alt="Docker/k3s">
 </p>
 
 ## 🎯 What is Opus?
 
-Opus is an AI-powered book generation system that creates professional manuscripts using multiple AI agent frameworks. It supports **fiction** and **nonfiction** with intelligent purpose classification.
+Opus is an AI-powered book generation system that creates professional manuscripts. It supports **fiction** and **nonfiction** with intelligent purpose classification, multiple export formats, and professional publishing workflows.
 
 ## ✨ Features
 
+### Core Capabilities
 - **Multi-Framework Orchestration**: LangGraph, CrewAI, and AutoGen
 - **Intelligent Purpose Classification**: Automatically determines reader purpose
 - **100+ Content Frameworks**: From textbooks to RPG modules
 - **Checkpoint/Resume**: Long generations can resume from failure
-- **REST API + CLI**: Programmatic or command-line usage
+
+### Input Sources
+- **GitHub Repository**: Ingest from any public/private repo
+- **S3/Backblaze**: Cloud storage ingestion
+- **Local Files**: Direct file input
+
+### Output Formats
+- **Scrivener Export**: Chapter-by-chapter with `binder.json`
+- **LaTeX**: 31 professional templates
+- **HTML**: Styled web output
+- **PDF**: Via LaTeX compilation
+
+### Publishing
+- **KDP Templates**: 5 trim sizes (5x8, 5.5x8.5, 6x9, 8x8, 8.5x11)
+- **31 LaTeX Templates**: Novel, memoir, academic, RPG, cookbook, etc.
+- **ISBN/Metadata**: Full publishing metadata support
+
+### Deployment
+- **Docker Compose**: Full local stack
+- **k3s/Helm**: Production Kubernetes
+- **REST API**: Programmatic access
 
 ## 🚀 Quick Start
 
@@ -32,101 +52,100 @@ pip install opus-orchestrator
 opus generate --concept "A robot who dreams of being human" --genre sci-fi
 
 # Generate a book (nonfiction)
-opus generate --book-type nonfiction --purpose learn --category technology "How to build an AI app"
+opus generate --book-type nonfiction --purpose learn "How to build an AI app"
 
-# Resume from checkpoint
-opus generate --thread-id abc123 --resume
+# Serve API
+opus serve --port 8000
 ```
 
 ## 📚 Framework Library
 
 Opus supports **100+ frameworks** organized by content type:
 
-### Nonfiction Categories
+### Nonfiction
 
 | Category | Frameworks | Purpose |
 |----------|-----------|---------|
-| **Tutorial/How-To** | Tutorial, Howto, Minimalist How-To, Challenge-Response | Learn to do something |
-| **Explanation** | Concept Explainer, Explainer, Socratic Method | Understand a concept |
-| **Transformation** | Transformation Journey, Mountain Structure, Atomic Habits | Personal change |
-| **Decision** | Big Idea, Problem-Solution, Case Study | Make informed decisions |
-| **Reference** | Technical Manual, Quick Reference, Encyclopedia | Look up information |
-| **Inspiration** | Visionary, Narrative, Memoir | Feel motivated |
+| **Tutorial/How-To** | Tutorial, Howto, Minimalist How-To | Learn to do |
+| **Explanation** | Concept Explainer, Socratic Method | Understand |
+| **Transformation** | Transformation Journey, Atomic Habits | Personal change |
+| **Decision** | Big Idea, Case Study | Make decisions |
+| **Reference** | Technical Manual, Quick Reference | Look up info |
 
-### Educational/Academic
-
-| Category | Frameworks |
-|----------|-----------|
-| **Textbooks** | Comprehensive Textbook, Textbook Chapter, Workbook |
-| **Courses** | Online Course, Curriculum/Syllabus, Study Guide |
-| **Academic** | Empirical Paper, Theoretical Paper, Literature Review, Thesis |
-| **Research** | Position Paper, Policy Brief, Meta-Analysis |
-
-### Creative/Interactive
+### Fiction
 
 | Category | Frameworks |
 |----------|-----------|
-| **Branching** | Choose Your Own Adventure, Gamebook, Visual Novel |
-| **Epistolary** | Epistolary Novel, Found Documents |
-| **Manifesto** | Manifesto, Open Letter |
-| **Experimental** | Infinite Story, Fractal Narrative, Scrapbook |
-| **Performance** | Podcast Script, Screenplay, Stage Play |
+| **Snowflake** | One-page to novel |
+| **Three-Act** | Classic structure |
+| **Hero's Journey** | Mythic structure |
+| **Save the Cat** | Screenwriting |
+| **Story Circle** | Dan Harmon's 8-part |
 
-### RPG/Tabletop Gaming
+### RPG/Game Books
 
 | Category | Frameworks |
 |----------|-----------|
-| **Core** | Core Rulebook, Quickstart |
-| **GM Guides** | Game Master Guide, Adventure Module, Campaign Setting |
-| **Supplements** | Player's Companion, Monster Manual, Sourcebook |
-| **Adventure Types** | Dungeon Crawl, Hex Crawl, Sandbox |
+| **Rulebook** | Core rules, system |
+| **Adventure** | Dungeon module, campaign |
+| **CYOA** | Choose Your Own Adventure |
 
-## 🔧 Configuration
+## 📄 Output Formats
 
-### Environment Variables
+### Scrivener Export
+```python
+from opus_orchestrator import export_to_scrivener
 
-```bash
-export OPENAI_API_KEY="your-key"  # or
-export MINIMAX_API_KEY="your-key"
+result = export_to_scrivener(
+    manuscript,
+    "My Book",
+    split_chapters=True,
+    branch="draft/chapter-1",
+    push_to_remote=True,
+)
+```
+Output: Individual `.md` files + `binder.json`
+
+### LaTeX Templates (31)
+```python
+from opus_orchestrator import export_to_latex
+
+export_to_latex(manuscript, "My Book", "out.tex", 
+    template="kdp-trade")
 ```
 
-### Config File (`opus.yaml`)
+**Templates:**
+- **KDP**: pocket, trade, 6x9, square, large
+- **Genre**: novel, memoir, romance, thriller, sci-fi
+- **Academic**: textbook, academic, cleanthesis, classicthesis
+- **Specialty**: poetry, cookbook, screenplay, RPG
 
-```yaml
-agent:
-  model: gpt-4o
-  temperature: 0.7
-  max_tokens: 4000
+### HTML Export
+```python
+from opus_orchestrator import export_to_html
 
-output:
-  format: markdown
-  save_to_file: true
+html = export_to_html(manuscript, "My Book", 
+    template="memoir")
 ```
 
-## 💻 CLI Commands
+## 🏭 Deployment
 
+### Docker Compose
 ```bash
-# Generate a book
-opus generate --concept "Your book idea" [options]
+# Quick start
+cp .env.example .env
+# Add your MINIMAX_API_KEY and GITHUB_TOKEN
 
-# Options:
-#   --book-type {fiction,nonfiction}  Book type
-#   --framework {snowflake,save-the-cat,...}  Story framework
-#   --genre {sci-fi,fantasy,romance,...}  Genre
-#   --purpose {learn,understand,transform,decide,reference,inspire}  Reader purpose
-#   --category {business,leadership,memoir,...}  Nonfiction category
-#   --words TARGET_WORD_COUNT  Target word count
-#   --thread-id THREAD_ID  Checkpoint ID for resume
-#   --resume  Resume from checkpoint
+docker-compose -f deployments/docker-compose.yml up -d
+```
 
-# Serve API
-opus serve --port 8000
+### k3s/Helm
+```bash
+# Install Opus API
+helm install opus deployments/k3s/opus-orchestrator/
 
-# List frameworks
-opus frameworks
-
-# Ingest from GitHub
-opus ingest --repo https://github.com/user/repo
+# Install TeX Live API (for PDF compilation)
+helm install texlive deployments/k3s/texlive-api/
 ```
 
 ## 🔌 REST API
@@ -146,89 +165,88 @@ curl -X POST http://localhost:8000/generate/stream \
   -d '{"concept": "Your book idea"}'
 ```
 
+## ⚙️ Configuration
+
+### Environment Variables
+```bash
+export MINIMAX_API_KEY="your-key"  # Primary
+export GITHUB_TOKEN="your-token"
+```
+
+### Config File
+```yaml
+agent:
+  provider: minimax
+  model: MiniMax/MiniMax-M2.5
+  temperature: 0.7
+
+output:
+  format: markdown
+  save_to_file: true
+  split_chapters: true
+```
+
 ## 🧠 Architecture
 
 ```
 User Input → Intent Classification → Framework Selection
     ↓
-Purpose Detection (learn/understand/transform/decide/reference/inspire)
+Purpose Detection (learn/understand/transform/decide)
     ↓
-Framework匹配 (100+ frameworks by category)
+Framework匹配 (100+ frameworks)
     ↓
-Agent Selection (purpose-specific writer + critique)
+Agent Selection (purpose-specific)
     ↓
-Generation Pipeline (LangGraph/CrewAI/AutoGen)
+Generation (LangGraph/CrewAI/AutoGen)
     ↓
-Manuscript Output
+Output (Scrivener/LaTeX/HTML/PDF)
 ```
-
-## 📦 Nonfiction Purpose System
-
-The nonfiction pipeline uses **Purpose × Structure** classification:
-
-### Reader Purposes
-
-1. **LEARN_HANDS_ON** — Reader wants to DO something (tutorials, how-to)
-2. **UNDERSTAND** — Reader wants to GRASP a concept (explanations)
-3. **TRANSFORM** — Reader wants to CHANGE themselves (self-help, memoir)
-4. **DECIDE** — Reader wants to MAKE A DECISION (business, analysis)
-5. **REFERENCE** — Reader wants to LOOK UP info (manuals, documentation)
-6. **BE_INSPIRED** — Reader wants to FEEL motivated (stories, manifestos)
-
-### Framework Selection
-
-The system automatically selects the best framework based on:
-- Explicit flags (`--purpose`, `--category`)
-- Keyword classification from concept
-- Content analysis (for existing blogs/articles)
-- Conversational Q&A (when ambiguous)
-
-## 🔄 Checkpointing/Resume
-
-Long generations can fail. Use checkpointing to resume:
-
-```bash
-# First run - saves checkpoint
-opus generate --concept "My book" --thread-id my-book-001
-# If it fails...
-
-# Resume from checkpoint
-opus generate --concept "My book" --thread-id my-book-001 --resume
-```
-
-## 🤖 Multi-Agent Systems
-
-Opus supports three orchestration backends:
-
-1. **LangGraph** — State machine with checkpointing
-2. **CrewAI** — Sequential agent crews
-3. **AutoGen** — Multi-agent debate/critique
 
 ## 📁 Project Structure
 
 ```
 opus_orchestrator/
-├── orchestrator.py       # Main orchestration
-├── langgraph_workflow.py # LangGraph pipeline
-├── crews/               # CrewAI crews
-├── autogen_critique.py  # AutoGen critique
-├── agents/              # Agent definitions
-│   ├── fiction/        # Fiction writers
-│   └── nonfiction/      # Nonfiction writers + purpose-specific
-├── frameworks.py        # Fiction frameworks
-├── nonfiction/          # Nonfiction system
-│   ├── classifier.py    # Purpose classifier
-│   ├── intake.py       # Intake agent
-│   ├── expanded_frameworks.py   # 35+ frameworks
-│   ├── textbook_frameworks.py   # Educational
-│   ├── academic_papers.py       # Academic types
-│   ├── creative_frameworks.py   # Interactive
-│   └── rpg_frameworks.py       # Tabletop RPG
-├── server.py            # REST API
-└── cli.py              # CLI
+├── orchestrator.py          # Main orchestration
+├── server.py               # REST API
+├── cli.py                  # CLI
+├── langgraph_workflow.py   # LangGraph pipeline
+├── nonfiction/             # Nonfiction system
+│   ├── classifier.py       # Purpose classifier
+│   └── frameworks.py       # 35+ frameworks
+├── frameworks.py           # Fiction frameworks
+├── scrivener_export.py    # Scrivener output
+├── latex_compile.py        # LaTeX export
+├── html_export.py          # HTML output
+├── texlive_client.py       # TeX Live API
+├── templates/
+│   └── latex/             # 31 templates
+└── deployments/
+    ├── docker-compose.yml
+    └── k3s/
 ```
 
-## 📄 License
+## 📦 Test Suite
+
+```bash
+# Run tests
+pytest tests/ -v
+
+# Test categories
+tests/
+├── test_github_ingest.py   # GitHub ingestion
+├── test_s3_ingest.py      # S3/Backblaze
+├── test_generation.py     # Document generation
+├── test_output_push.py    # Output push
+└── test_e2e.py           # End-to-end
+```
+
+## 🔗 Links
+
+- [GitHub](https://github.com/mrhavens/opus-orchestrator-ai)
+- [Issues](https://github.com/mrhavens/opus-orchestrator-ai/issues)
+- [BECOMINGONE](https://github.com/mrhavens/becomingone)
+
+## 📜 License
 
 MIT
 
@@ -236,7 +254,6 @@ MIT
 
 Mark Havens
 
-## 🔗 Links
+---
 
-- [GitHub](https://github.com/mrhavens/opus-orchestrator-ai)
-- [Documentation](https://github.com/mrhavens/opus-orchestrator-ai/docs)
+*Built with ♥ using MiniMax M2.5*
