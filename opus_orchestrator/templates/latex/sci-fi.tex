@@ -1,0 +1,117 @@
+% Mirror/Atlas Book Template - Sci-Fi/Fantasy
+% Inspired by Orbit/DAW book design
+
+\documentclass[12pt]{memoir}
+
+% Packages
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{geometry}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage{textcomp}
+
+% Sci-fi trim (slightly wider)
+\geometry{
+  paperwidth=5.5in,
+  paperheight=8.5in,
+  textwidth=4.25in,
+  textheight=7in,
+  inner=0.625in,
+  outer=0.5in,
+  bindingoffset=0.125in,
+}
+
+% Dark theme colors
+\definecolor{atlasblue}{RGB}{0,47,87}
+\definecolor{atlasgold}{RGB}{218,165,32}
+
+% Hyperref
+\hypersetup{
+  colorlinks=true,
+  linkcolor=atlasblue,
+  urlcolor=atlasblue,
+}
+
+% Fonts
+\usepackage{mathptmx}
+\usepackage[T1]{url}
+
+% Chapter style - dramatic
+\chapterstyle{dowding}
+
+% Drop caps with color
+\lettrinecolor{atlasblue}
+\lettrineHeightLines=2
+
+% Headers - minimal
+\pagestyle{simple}
+
+% Part style
+\def\partnamefont{\normalfont\Large\scshape\MakeLowercase}
+\def\parttitlefont{\normalfont\Huge\bfseries\color{atlasblue}}
+
+% Metadata
+\def\booktitle{$book_title$}
+\def\bookauthor{$author$}
+\def\bookdate{$date$}
+\def\bookpublisher{$publisher$}
+
+\begin{document}
+
+% Half title - just title
+\thispagestyle{empty}
+\vspace*{2in}
+{\Huge\scshape\booktitle}
+
+% Title page - dramatic
+\clearpage
+\thispagestyle{empty}
+\vspace*{1in}
+\begin{center}
+{\Huge\scshape\booktitle\par}
+\vspace{0.5in}
+{\Large by \bookauthor\par}
+\vfill
+{\large\scshape\bookpublisher}
+\end{center}
+
+% Copyright
+\clearpage
+\thispagestyle{empty}
+\vspace*{\fill}
+\begin{center}
+Copyright \textcopyright\ \bookdate\ \bookauthor\\
+\bigskip
+All rights reserved.
+\end{center}
+\vspace*{\fill}
+
+% Dedication
+$if(dedication)$
+\clearpage
+\thispagestyle{empty}
+\vspace*{3in}
+\begin{center}
+\textit{$dedication$}
+\end{center}
+$endif$
+
+% Epigraph
+$if(epigraph)$
+\clearpage
+\begin{center}
+\textit{$epigraph$}
+\end{center}
+$endif$
+
+% Contents
+\clearpage
+\tableofcontents
+
+$body$
+
+\end{document}

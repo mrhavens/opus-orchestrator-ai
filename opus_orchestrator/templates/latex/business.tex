@@ -1,0 +1,128 @@
+% Business Book Template - Professional/Corporate
+% Non-fiction, self-help, leadership
+
+\documentclass[12pt]{memoir}
+
+% Packages
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{geometry}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{titlesec}
+\usepackage{framed}
+
+% Business trim - readable
+\geometry{
+  paperwidth=6in,
+  paperheight=9in,
+  textwidth=4.5in,
+  textheight=7.5in,
+  inner=0.75in,
+  outer=0.5in,
+}
+
+% Professional colors
+\definecolor{bizblue}{RGB}{0,85,153}
+\definecolor{bizdark}{RGB}{51,51,51}
+\definecolor{bizgray}{RGB}{128,128,128}
+
+% Hyperref
+\hypersetup{
+  colorlinks=true,
+  linkcolor=bizblue,
+  urlcolor=bizblue,
+}
+
+% Fonts - clean
+\usepackage{mathptmx}
+
+% Chapter style - clean
+\chapterstyle{dowding}
+
+% Section colors
+\titleformat{\section}
+  {\color{bizblue}\normalfont\Large\bfseries}
+  {\color{bizblue}\thesection}{1em}{}
+
+% Headers
+\pagestyle{simple}
+
+% Callout box
+\newenvironment{callout}
+  {\begin{framed}\color{bizblue}}
+  {\end{framed}}
+
+% Key point box
+\newenvironment{keypoint}
+  {\begin{framed}\color{bizdark}\textbf}}
+  {\end{framed}}
+
+% Metadata
+\def\booktitle{$book_title$}
+\def\bookauthor{$author$}
+\def\bookdate{$date$}
+\def\bookpublisher{$publisher$}
+
+\begin{document}
+
+% Title page
+\thispagestyle{empty}
+\begin{center}
+\vspace*{1in}
+{\Huge\bfseries\booktitle\par}
+\vspace{1in}
+{\Large by \bookauthor\par}
+\vfill
+{\large\bookpublisher}\\
+{\bookdate}
+\end{center}
+
+% Copyright
+\clearpage
+\thispagestyle{empty}
+\vspace*{\fill}
+\begin{center}
+Copyright \textcopyright\ \bookdate\ \bookauthor\\
+All rights reserved.
+\end{center}
+\vspace*{\fill}
+
+% Dedication
+$if(dedication)$
+\clearpage
+\thispagestyle{empty}
+\vspace*{3in}
+\begin{center}
+\textit{$dedication$}
+\end{center}
+$endif$
+
+% Contents
+\clearpage
+\tableofcontents
+
+% Main
+$body$
+
+% About author
+\clearpage
+\section*{About the Author}
+
+\bigskip
+\textit{\bookauthor} is an accomplished professional in their field.
+
+% Also by
+\clearpage
+\section*{Also By}
+
+\begin{itemize}
+\item Book One
+\item Book Two
+\end{itemize}
+
+\end{document}

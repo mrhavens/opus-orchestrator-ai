@@ -1,0 +1,65 @@
+% Minimal Book - Clean, Bare-Bones
+% For when you want zero styling
+
+\documentclass[12pt]{book}
+
+% Basic packages only
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{geometry}
+
+% Simple trim
+\geometry{
+  paperwidth=6in,
+  paperheight=9in,
+  textwidth=4.5in,
+  textheight=7.5in,
+  inner=0.75in,
+  outer=0.75in,
+}
+
+% Hyperref
+\hypersetup{
+  colorlinks=true,
+  linkcolor=black,
+}
+
+% No extra styling - plain LaTeX
+
+% Metadata
+\def\booktitle{$book_title$}
+\def\bookauthor{$author$}
+\def\bookdate{$date$}
+
+\begin{document}
+
+% Title
+\thispagestyle{empty}
+\begin{center}
+\vspace*{2in}
+{\LARGE\bfseries\booktitle\par}
+\bigskip
+by \bookauthor
+\vfill
+\bookdate
+\end{center}
+
+% Copyright
+\clearpage
+\thispagestyle{empty}
+\vspace*{\fill}
+Copyright \copyright\ \bookdate\ \bookauthor
+\vspace*{\fill}
+
+% Contents
+\clearpage
+\tableofcontents
+
+% Main
+\mainmatter
+
+$body$
+
+\end{document}

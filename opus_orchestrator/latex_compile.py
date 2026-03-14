@@ -69,6 +69,10 @@ class LaTeXExporter:
         "legrand": "legrand.tex",             # Orange book style
         "cleanthesis": "cleanthesis.tex",      # Minimalist
         "university-press": "university-press.tex", # Cambridge/Oxford
+        "tufte": "tufte.tex",                # Tufte side-notes
+        "sci-fi": "sci-fi.tex",             # Orbit/DAW style
+        "business": "business.tex",        # Professional
+        "minimal": "minimal.tex",           # Bare-bones
         
         # RPG/Game Books
         "rpg-rulebook": "rpg-rulebook.tex",   # Game system

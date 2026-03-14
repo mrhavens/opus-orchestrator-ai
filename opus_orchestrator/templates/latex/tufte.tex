@@ -1,0 +1,97 @@
+% Tufte-LaTeX Style - Side Note Layout
+% Based on Edward Tufte's design principles
+% http://www.tufte-latex.com/
+
+\documentclass[nols]{tufte-book}
+
+% Packages
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{geometry}
+\usepackage{microtype}
+
+% KDP trim
+\geometry{
+  paperwidth=6in,
+  paperheight=9in,
+  textwidth=4.5in,
+  textheight=7.5in,
+  inner=0.5in,
+  outer=0.5in,
+  marginparwidth=1.5in,
+  marginparsep=0.3in,
+}
+
+% Hyperref
+\hypersetup{
+  colorlinks=true,
+  linkcolor=darkblue,
+  citecolor=darkblue,
+  urlcolor=darkblue,
+}
+
+% Fonts - use Minion if available, else fallback
+\usepackage{mathpazo}  % Palatino
+\usepackage[T1]{url}
+
+% Chapter style
+\titleformat{\chapter}%
+  {\relax}{\thechapter}{0.5em}{\scshape\LARGE}
+
+% Full width figure
+\newenvironment{fullwidth}%
+  {\begin{fullwidth环境}}
+  {\end{fullwidth环境}}
+
+% Sidenote command
+% Usage: \sidenote{Your note here}
+
+% Metadata
+\def\booktitle{$book_title$}
+\def\bookauthor{$author$}
+\def\bookdate{$date$}
+
+\begin{document}
+
+% Title page
+\thispagestyle{empty}
+\begin{fullwidth}
+\vspace*{1.5in}
+{\Huge\scshape\booktitle\par}
+\vspace{1in}
+{\Large by \bookauthor\par}
+\vfill
+{\large\bookdate}
+\end{fullwidth}
+
+% Copyright
+\clearpage
+\thispagestyle{empty}
+\vspace*{\fill}
+\begin{fullwidth}
+Copyright \textcopyright\ \bookdate\ \bookauthor\\
+All rights reserved.
+\end{fullwidth}
+
+% Dedication
+$if(dedication)$
+\clearpage
+\begin{fullwidth}
+\vspace*{3in}
+\begin{center}
+\textit{$dedication$}
+\end{center}
+\end{fullwidth}
+$endif$
+
+% Contents
+\clearpage
+\tableofcontents
+
+% Main
+\mainmatter
+
+$body$
+
+\end{document}
