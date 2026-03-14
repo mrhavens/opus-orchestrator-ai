@@ -1,452 +1,242 @@
 # Opus Orchestrator AI
 
-> Full-flow AI book generation system using **LangGraph**, **CrewAI**, **AutoGen**, and **PydanticAI**
+> A comprehensive AI-powered book generation system with LangGraph, CrewAI, and AutoGen.
 
-A comprehensive, production-ready system for generating publication-ready manuscripts.
+<p align="center">
+  <img src="https://img.shields.io/badge/python-3.10+-blue.svg" alt="Python">
+  <img src="https://img.shields.io/badge/LangGraph-✅-green.svg" alt="LangGraph">
+  <img src="https://img.shields.io/badge/CrewAI-✅-green.svg" alt="CrewAI">
+  <img src="https://img.shields.io/badge/AutoGen-✅-green.svg" alt="AutoGen">
+  <img src="https://img.shields.io/badge/Pydantic-✅-green.svg" alt="Pydantic">
+</p>
 
----
+## 🎯 What is Opus?
 
-## ⚡ Quick Install
+Opus is an AI-powered book generation system that creates professional manuscripts using multiple AI agent frameworks. It supports **fiction** and **nonfiction** with intelligent purpose classification.
 
-### One-Line Installer (Recommended)
+## ✨ Features
+
+- **Multi-Framework Orchestration**: LangGraph, CrewAI, and AutoGen
+- **Intelligent Purpose Classification**: Automatically determines reader purpose
+- **100+ Content Frameworks**: From textbooks to RPG modules
+- **Checkpoint/Resume**: Long generations can resume from failure
+- **REST API + CLI**: Programmatic or command-line usage
+
+## 🚀 Quick Start
 
 ```bash
-# Install and start web UI
-curl -sSL https://raw.githubusercontent.com/mrhavens/opus-orchestrator-ai/main/install.sh | bash -s -- --api-key YOUR_OPENAI_KEY --start
+# Install
+pip install opus-orchestrator
+
+# Generate a book (fiction)
+opus generate --concept "A robot who dreams of being human" --genre sci-fi
+
+# Generate a book (nonfiction)
+opus generate --book-type nonfiction --purpose learn --category technology "How to build an AI app"
+
+# Resume from checkpoint
+opus generate --thread-id abc123 --resume
 ```
 
-With options:
+## 📚 Framework Library
+
+Opus supports **100+ frameworks** organized by content type:
+
+### Nonfiction Categories
+
+| Category | Frameworks | Purpose |
+|----------|-----------|---------|
+| **Tutorial/How-To** | Tutorial, Howto, Minimalist How-To, Challenge-Response | Learn to do something |
+| **Explanation** | Concept Explainer, Explainer, Socratic Method | Understand a concept |
+| **Transformation** | Transformation Journey, Mountain Structure, Atomic Habits | Personal change |
+| **Decision** | Big Idea, Problem-Solution, Case Study | Make informed decisions |
+| **Reference** | Technical Manual, Quick Reference, Encyclopedia | Look up information |
+| **Inspiration** | Visionary, Narrative, Memoir | Feel motivated |
+
+### Educational/Academic
+
+| Category | Frameworks |
+|----------|-----------|
+| **Textbooks** | Comprehensive Textbook, Textbook Chapter, Workbook |
+| **Courses** | Online Course, Curriculum/Syllabus, Study Guide |
+| **Academic** | Empirical Paper, Theoretical Paper, Literature Review, Thesis |
+| **Research** | Position Paper, Policy Brief, Meta-Analysis |
+
+### Creative/Interactive
+
+| Category | Frameworks |
+|----------|-----------|
+| **Branching** | Choose Your Own Adventure, Gamebook, Visual Novel |
+| **Epistolary** | Epistolary Novel, Found Documents |
+| **Manifesto** | Manifesto, Open Letter |
+| **Experimental** | Infinite Story, Fractal Narrative, Scrapbook |
+| **Performance** | Podcast Script, Screenplay, Stage Play |
+
+### RPG/Tabletop Gaming
+
+| Category | Frameworks |
+|----------|-----------|
+| **Core** | Core Rulebook, Quickstart |
+| **GM Guides** | Game Master Guide, Adventure Module, Campaign Setting |
+| **Supplements** | Player's Companion, Monster Manual, Sourcebook |
+| **Adventure Types** | Dungeon Crawl, Hex Crawl, Sandbox |
+
+## 🔧 Configuration
+
+### Environment Variables
+
 ```bash
-curl -sSL https://raw.githubusercontent.com/mrhavens/opus-orchestrator-ai/main/install.sh | bash -s -- \
-  --api-key YOUR_KEY \
-  --github-token YOUR_GH_TOKEN \
-  --port 8080 \
-  --start
+export OPENAI_API_KEY="your-key"  # or
+export MINIMAX_API_KEY="your-key"
 ```
 
-### Or Pip Install
+### Config File (`opus.yaml`)
 
-```bash
-pip install opus-orchestrator-ai
-pip install opus-orchestrator-ai[all]  # With server + storage
+```yaml
+agent:
+  model: gpt-4o
+  temperature: 0.7
+  max_tokens: 4000
+
+output:
+  format: markdown
+  save_to_file: true
 ```
 
-### Or Clone
+## 💻 CLI Commands
 
 ```bash
-git clone https://github.com/mrhavens/opus-orchestrator-ai.git
-cd opus-orchestrator-ai
-pip install -e .
-pip install fastapi uvicorn
-```
+# Generate a book
+opus generate --concept "Your book idea" [options]
 
----
+# Options:
+#   --book-type {fiction,nonfiction}  Book type
+#   --framework {snowflake,save-the-cat,...}  Story framework
+#   --genre {sci-fi,fantasy,romance,...}  Genre
+#   --purpose {learn,understand,transform,decide,reference,inspire}  Reader purpose
+#   --category {business,leadership,memoir,...}  Nonfiction category
+#   --words TARGET_WORD_COUNT  Target word count
+#   --thread-id THREAD_ID  Checkpoint ID for resume
+#   --resume  Resume from checkpoint
 
-## ⚡ Quick Start (After Install)
-
-```bash
-# Generate a manuscript (local mode)
-opus generate --concept "A robot dreams of electric sheep" --words 5000
-
-# Or use API server mode
+# Serve API
 opus serve --port 8000
-opus --api-url http://localhost:8000 generate --concept "Your idea"
-```
-
----
-
-## 🏗️ Architecture
-
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                      OPUS ORCHESTRATOR AI                          │
-├─────────────────────────────────────────────────────────────────────┤
-│                                                                     │
-│  ┌─────────────┐    ┌─────────────┐    ┌─────────────────────┐  │
-│  │   INGEST   │───►│   LANGGRAPH │───►│    OUTPUT           │  │
-│  │   LAYER    │    │   WORKFLOW  │    │    (Manuscript)     │  │
-│  └─────────────┘    └─────────────┘    └─────────────────────┘  │
-│         │                  │                                       │
-│    ┌────┴────┐       ┌────┴────┐                                 │
-│    ▼         ▼       ▼         ▼                                  │
-│ GitHub    S3/MinIO  CrewAI   AutoGen                              │
-│ Ingestor  Ingestor   Agents   Critique                             │
-│                                                                     │
-│  ┌─────────────────────────────────────────────────────────────┐  │
-│  │                   VALIDATION LAYER                          │  │
-│  │                    PydanticAI                               │  │
-│  └─────────────────────────────────────────────────────────────┘  │
-│                                                                     │
-└─────────────────────────────────────────────────────────────────────┘
-```
-
----
-
-## 📦 Features
-
-### Core Generation
-
-| Feature | Description | Status |
-|---------|-------------|--------|
-| **Snowflake Method** | 7-stage fractal expansion from sentence to novel | ✅ |
-| **Story Frameworks** | 7 frameworks: Snowflake, 3-Act, Save the Cat, Hero's Journey, Story Circle, 7-Point, Fichtean | ✅ |
-| **LangGraph Workflow** | State machine with streaming progress | ✅ |
-| **AutoGen Critique** | Multi-agent debate (LiteraryCritic, GenreExpert, StoryEditor) | ✅ |
-| **PydanticAI Validation** | Structured output validation with type-safe schemas | ✅ |
-
-### Agent Systems
-
-| Agent | Role | Status |
-|-------|------|--------|
-| **ArchitectAgent** | Story structure & blueprint | ✅ |
-| **WorldsmithAgent** | World-building & setting | ✅ |
-| **CharacterLeadAgent** | Character development | ✅ |
-| **VoiceAgent** | Narrative voice & tone | ✅ |
-| **EditorAgent** | Editorial review | ✅ |
-| **ResearcherAgent** (Nonfiction) | Fact-finding | ✅ |
-| **AnalystAgent** (Nonfiction) | Argument analysis | ✅ |
-
-### Ingestion Sources
-
-| Source | Description | Status |
-|--------|-------------|--------|
-| **GitHub** | Fetch from public/private repos | ✅ |
-| **S3/MinIO** | S3-compatible object storage | ✅ |
-| **Local Files** | Direct file/directory input | ✅ |
-
-### Ingestion CLI Commands
-
-```bash
-# Ingest from GitHub
-opus ingest --repo owner/repo
-
-# Ingest from S3/MinIO
-opus ingest-s3 --bucket my-bucket --prefix notes/
-
-# Ingest from local files/directory
-opus ingest-local ./my-notes/
-opus ingest-local ./manuscript.txt
-opus ingest-local ./folder --extensions md,txt --recursive
-opus ingest-local ./notes --summarize --max-length 5000
-```
-
-### Deployment
-
-| Mode | Description | Status |
-|------|-------------|--------|
-| **CLI** | Standalone command-line tool | ✅ |
-| **Web UI** | Browser-based interface | ✅ |
-| **API Server** | FastAPI REST server | ✅ |
-| **API Client** | Client mode for remote servers | ✅ |
-| **Python Module** | Import as library | ✅ |
-
-### Web Interface
-
-```bash
-# Start web UI only (no API)
-opus ui --port 8080
-
-# Start full API server (includes web UI)
-opus serve --port 8000
-```
-
-Then open http://localhost:8080 in your browser!
-
-Features:
-- 💡 Enter story concept
-- 🐙 Pull from GitHub
-- 🪣 Load from S3
-- 📁 Upload files
-- ☁️ Save to S3/GitHub
-- 📥 Download manuscript
-
-### Output Options
-
-| Destination | CLI Flag | Description |
-|------------|----------|-------------|
-| **Local File** | `--output FILE` | Save to local filesystem |
-| **S3/MinIO** | `--save-s3 BUCKET/PATH` | Upload to S3-compatible storage |
-| **GitHub** | `--save-repo OWNER/REPO` | Commit to GitHub repository |
-
----
-
-## 🚀 Usage
-
-### CLI Commands
-
-```bash
-# Generate manuscript from concept (local)
-opus generate --concept "Your story idea" --framework snowflake --words 5000
-
-# Generate from GitHub
-opus generate --repo owner/repo --framework hero-journey --words 80000
-
-# Generate from local files/directory
-opus generate --local ./my-notes/ --framework snowflake --words 5000
-opus generate --local ./manuscript.txt --words 5000
-
-# Generate and save to S3/MinIO
-opus generate --concept "..." --save-s3 my-bucket/manuscripts/
-opus generate --concept "..." --save-s3 my-bucket/path/ --save-s3-endpoint https://nyc3.digitaloceanspaces.com
-
-# Generate and save to GitHub repo
-opus generate --concept "..." --save-repo owner/my-manuscripts
-opus generate --concept "..." --save-repo owner/my-manuscripts --save-branch develop --save-commit-msg "New story draft"
-
-# Generate from one source, save to another
-opus generate --repo owner/notes --save-s3 output-bucket/manuscripts/
-opus generate --local ./notes --save-repo owner/output-repo
-
-# Ingest from various sources
-opus ingest --repo owner/repo
-opus ingest-s3 --bucket my-bucket --prefix notes/
-opus ingest-local ./my-notes/
-opus ingest-local ./folder --extensions md,txt,notes --recursive
-opus ingest-local ./notes --summarize --max-length 5000
-
-# Start API server
-opus serve --port 8000
-
-# Use as API client
-opus --api-url http://localhost:8000 generate --concept "..."
 
 # List frameworks
 opus frameworks
 
-# Show config
-opus config
-
-# Show docs
-opus docs
+# Ingest from GitHub
+opus ingest --repo https://github.com/user/repo
 ```
 
-### Python API
+## 🔌 REST API
 
-```python
-from opus_orchestrator import run_opus
+```bash
+# Start server
+opus serve
 
-# Simple generation
-result = await run_opus(
-    seed_concept="A robot dreams of love",
-    framework="snowflake",
-    genre="science-fiction",
-    target_word_count=5000,
-)
+# Generate (blocking)
+curl -X POST http://localhost:8000/generate \
+  -H "Content-Type: application/json" \
+  -d '{"concept": "Your book idea", "book_type": "fiction"}'
 
-manuscript = result["manuscript"]
+# Generate (streaming)
+curl -X POST http://localhost:8000/generate/stream \
+  -H "Content-Type: application/json" \
+  -d '{"concept": "Your book idea"}'
 ```
 
-### Using CrewAI
+## 🧠 Architecture
 
-```python
-from opus_orchestrator.crews import create_fiction_crew
-
-crew = create_fiction_crew(
-    genre="science-fiction",
-    tone="literary",
-    target_word_count=2000,
-)
-
-story = crew.write_full_story(
-    story_outline="Your outline...",
-    character_sheets="...",
-    style_guide="Tone: literary",
-    num_chapters=5,
-)
+```
+User Input → Intent Classification → Framework Selection
+    ↓
+Purpose Detection (learn/understand/transform/decide/reference/inspire)
+    ↓
+Framework匹配 (100+ frameworks by category)
+    ↓
+Agent Selection (purpose-specific writer + critique)
+    ↓
+Generation Pipeline (LangGraph/CrewAI/AutoGen)
+    ↓
+Manuscript Output
 ```
 
-### Using PydanticAI Validation
+## 📦 Nonfiction Purpose System
 
-```python
-from opus_orchestrator import create_style_guide_agent
+The nonfiction pipeline uses **Purpose × Structure** classification:
 
-agent = create_style_guide_agent()
-result = agent.run_sync("Create a style guide for a literary novel")
+### Reader Purposes
 
-# Result is a validated StyleGuide object
-print(result.tone)        # "Contemplative and introspective"
-print(result.pacing)      # "Deliberate with moments of acceleration"
+1. **LEARN_HANDS_ON** — Reader wants to DO something (tutorials, how-to)
+2. **UNDERSTAND** — Reader wants to GRASP a concept (explanations)
+3. **TRANSFORM** — Reader wants to CHANGE themselves (self-help, memoir)
+4. **DECIDE** — Reader wants to MAKE A DECISION (business, analysis)
+5. **REFERENCE** — Reader wants to LOOK UP info (manuals, documentation)
+6. **BE_INSPIRED** — Reader wants to FEEL motivated (stories, manifestos)
+
+### Framework Selection
+
+The system automatically selects the best framework based on:
+- Explicit flags (`--purpose`, `--category`)
+- Keyword classification from concept
+- Content analysis (for existing blogs/articles)
+- Conversational Q&A (when ambiguous)
+
+## 🔄 Checkpointing/Resume
+
+Long generations can fail. Use checkpointing to resume:
+
+```bash
+# First run - saves checkpoint
+opus generate --concept "My book" --thread-id my-book-001
+# If it fails...
+
+# Resume from checkpoint
+opus generate --concept "My book" --thread-id my-book-001 --resume
 ```
 
-### API Server
+## 🤖 Multi-Agent Systems
 
-```python
-from opus_orchestrator.server import app, run_server
+Opus supports three orchestration backends:
 
-# Run server
-await run_server(host="0.0.0.0", port=8000)
+1. **LangGraph** — State machine with checkpointing
+2. **CrewAI** — Sequential agent crews
+3. **AutoGen** — Multi-agent debate/critique
 
-# Or with uvicorn directly
-# uvicorn opus_orchestrator.server:app --port 8000
-```
-
-### API Client
-
-```python
-from opus_orchestrator.cli import OpusAPIClient
-
-client = OpusAPIClient("http://localhost:8000")
-
-# Health check
-health = client.health()
-
-# Generate
-result = client.generate(
-    concept="A robot dreams",
-    framework="snowflake",
-    target_word_count=5000,
-)
-
-print(result["manuscript"])
-```
-
----
-
-## ⚙️ Configuration
-
-### Environment Variables
-
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `OPENAI_API_KEY` | OpenAI API key | Yes (or MINIMAX_API_KEY) |
-| `MINIMAX_API_KEY` | MiniMax API key | No |
-| `GITHUB_TOKEN` | GitHub token for private repos | No |
-| `AWS_ACCESS_KEY_ID` | AWS access key for S3 | No |
-| `AWS_SECRET_ACCESS_KEY` | AWS secret key for S3 | No |
-| `S3_ENDPOINT_URL` | Custom S3 endpoint (MinIO, DO Spaces) | No |
-
-### API Endpoints
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/` | GET | Web UI |
-| `/ui` | GET | Web UI |
-| `/docs` | GET | Interactive API docs |
-| `/health` | GET | Health check |
-| `/frameworks` | GET | List frameworks |
-| `/generate` | POST | Generate manuscript |
-| `/ingest` | POST | Ingest from GitHub |
-| `/upload` | POST | Upload file |
-| `/upload/s3` | POST | Upload to S3 |
-
-### Configuration File
-
-```yaml
-# config.yaml
-agent:
-  provider: openai
-  model: gpt-4o
-  temperature: 0.7
-  max_tokens: null
-
-iteration:
-  min_critic_rounds: 2
-  max_critic_rounds: 5
-  approval_threshold: 0.8
-
-output:
-  format: markdown
-  include_toc: true
-  output_dir: ./output
-```
-
----
-
-## 📚 Story Frameworks
-
-### Implemented Frameworks
-
-| Framework | Type | Stages/Beats |
-|-----------|------|---------------|
-| **Snowflake Method** | Fractal | 7 stages |
-| **Three-Act Structure** | Linear | 7 beats |
-| **Save the Cat** | Screenplay | 15 beats |
-| **Hero's Journey** | Mythic | 12 stages |
-| **Story Circle** | Circular | 8 beats |
-| **7-Point Plot** | Structural | 7 beats |
-| **Fichtean Curve** | Episodic | 7 beats |
-
----
-
-## 🧩 Project Structure
+## 📁 Project Structure
 
 ```
 opus_orchestrator/
-├── __init__.py           # Main exports
-├── __main__.py           # CLI entry point
-├── cli.py                # CLI implementation
-├── server.py             # FastAPI server
-├── orchestrator.py       # Main orchestrator
+├── orchestrator.py       # Main orchestration
 ├── langgraph_workflow.py # LangGraph pipeline
-├── autogen_critique.py  # AutoGen critique crew
-├── pydanticai_agent.py  # PydanticAI agents
-├── config.py             # Configuration
-├── frameworks.py          # Story frameworks
-│
-├── agents/               # Agent implementations
-│   ├── fiction/          # Fiction agents
-│   │   ├── architect.py
-│   │   ├── worldsmith.py
-│   │   ├── character_lead.py
-│   │   ├── voice.py
-│   │   └── editor.py
-│   └── nonfiction/      # Nonfiction agents
-│       ├── researcher.py
-│       ├── analyst.py
-│       ├── writer.py
-│       ├── fact_checker.py
-│       └── editor.py
-│
 ├── crews/               # CrewAI crews
-│   ├── base_crew.py     # Base crew class
-│   ├── fiction_crew.py  # Fiction crew
-│   └── nonfiction_crew.py
-│
-├── schemas/              # Pydantic schemas
-│   └── book.py
-│
-└── utils/               # Utilities
-    ├── github_ingest.py # GitHub ingestion
-    ├── s3_ingest.py    # S3/MinIO ingestion
-    ├── llm.py          # LLM client
-    └── docs.py         # Documentation generator
+├── autogen_critique.py  # AutoGen critique
+├── agents/              # Agent definitions
+│   ├── fiction/        # Fiction writers
+│   └── nonfiction/      # Nonfiction writers + purpose-specific
+├── frameworks.py        # Fiction frameworks
+├── nonfiction/          # Nonfiction system
+│   ├── classifier.py    # Purpose classifier
+│   ├── intake.py       # Intake agent
+│   ├── expanded_frameworks.py   # 35+ frameworks
+│   ├── textbook_frameworks.py   # Educational
+│   ├── academic_papers.py       # Academic types
+│   ├── creative_frameworks.py   # Interactive
+│   └── rpg_frameworks.py       # Tabletop RPG
+├── server.py            # REST API
+└── cli.py              # CLI
 ```
-
----
-
-## 🧪 Testing
-
-```bash
-# Run tests
-pytest tests/
-
-# Run with coverage
-pytest --cov=opus_orchestrator tests/
-
-# Lint
-ruff check .
-
-# Format
-ruff format .
-```
-
----
 
 ## 📄 License
 
-MIT License
+MIT
 
----
+## 👤 Author
 
-## 🤝 Built With
+Mark Havens
 
-- **LangGraph** - Workflow orchestration
-- **CrewAI** - Multi-agent systems
-- **AutoGen** - Complex agent conversations
-- **PydanticAI** - Structured output validation
-- **FastAPI** - REST API server
-- **OpenAI** - LLM provider
+## 🔗 Links
 
----
-
-*Built with the WE Architecture — witness and co-creation in code.*
+- [GitHub](https://github.com/mrhavens/opus-orchestrator-ai)
+- [Documentation](https://github.com/mrhavens/opus-orchestrator-ai/docs)
