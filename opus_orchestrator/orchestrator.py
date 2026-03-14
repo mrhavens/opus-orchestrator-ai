@@ -134,6 +134,7 @@ class OpusOrchestrator:
                 self._classify_purpose_from_intent(
                     concept=intended_outcome,  # Using outcome as proxy for concept
                     target_audience=target_audience,
+                    intended_outcome=intended_outcome,
                 )
             
             # Select appropriate framework based on purpose
@@ -190,18 +191,20 @@ class OpusOrchestrator:
         self,
         concept: str,
         target_audience: str,
+        intended_outcome: str,
     ) -> None:
         """Classify purpose from book intent using keyword classifier.
         
         Args:
             concept: The book concept/title
             target_audience: Target audience description
+            intended_outcome: What the book intends to achieve
         """
         classifier = PurposeClassifier()
         result = classifier._keyword_classify(
             concept=concept or "",
             target_audience=target_audience,
-            intended_outcome=self.intent.intended_outcome or "",
+            intended_outcome=intended_outcome or "",
         )
         
         self.purpose = result.purpose
